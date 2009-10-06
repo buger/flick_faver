@@ -1,0 +1,5 @@
+indexes:
+- kind: Video
+  properties:
+  - name: author
+  - name: status

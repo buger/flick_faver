@@ -1,0 +1,5 @@
+cron:
+- description: Process new video sources
+  url: /process/sources
+  schedule: every 1 minutes
+  timezone: Europe/Moscow
