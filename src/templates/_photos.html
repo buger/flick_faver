@@ -1,0 +1,15 @@
+{% for photo_group in photos_groups %}
+<tr {% if forloop.counter0|divisibleby:2 %}class="group_start"{% endif %}>
+  {% for photo in photo_group %}
+  <td valign="top" class="photo" align="right" id="{{photo.photoid}}">
+    <div class="title"><a href="{{photo.author_uri}}" target="_blank">{{photo.author}}</a></div>
+    <div>              
+      <a href="{{photo.uri}}" target="_blank">
+        <img src="{{photo.image_m_url}}"/>
+      </a> 
+    </div>
+    <div class="author"></div>        
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}

@@ -1,27 +1,135 @@
 <html>
   <head>
-    <style>
+    <title>FlickFaver - your friend favorite photos</title>
+    <meta name="keywords" content="flickr photo favorites contacts feed" />
+    <meta name="description" content="Take everithing from your flickr, find best photos" />
+  
+    <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/reset/reset-min.css">
+    <script type="text/javascript">
+    
+      function scroll(){
+        dimensions = document.viewport.getDimensions()       
+        scroll_offset = document.viewport.getScrollOffsets()
+       
+        if((scroll_offset.top+window.innerHeight+400) > dimensions.height){
+          loadPhotos()
+        }       
+      }
+      window.onscroll = scroll;
+            
+      function loadPhotos(){
+        if(!document.loading){
+          document.loading = true
+          
+          if (document.current_page == undefined)
+            document.current_page = 1
+
+          new Ajax.Request("/photos/"+(document.current_page+1),{
+            onSuccess: function(response) {
+              $('photos_table').insert({bottom: response.responseText})
+              
+              document.loading = false
+              document.current_page += 1
+            }
+          })      
+        }
+      }
+    </script>    
+        
+    <style>      
+      * {
+        border: 0px;
+      }
+          
       body
       {
         text-align: center;
+        background: #f9f9f9;
       }
       
       div#container
       {
         margin-left: auto;
         margin-right: auto;
-        width: 50em;
+        width: 60em;
         text-align: left;
-        
-        border: 1px solid red;
       }
+      
+      a.login_link {
+        padding: 20px;
+        border: 1px solid #ccc;
+        background: #eee;
+        font-size: 3em;
+        color: purple;        
+      }        
+            
+      div#inner h1 {
+        color: #999;
+        font-size: 3em;
+        font-family: Verdana;
+      }
+      
+      div.header {
+        background: #c4ccff;
+        height: 50px;
+      }
+      
+      div.photos .group_start td {
+        padding-top: 3em;
+      }
+      
+      div.photos td.photo {
+        padding-left: 2em;
+        padding-bottom: 2em;        
+      }
+      
+      div.photos .photo .title{
+        padding-bottom: 2px;
+        font-size: 0.8em;
+        text-align: right;
+      }
+      
+      div.photos .photo .title a {
+        color: #333;
+      }
+                
+      div.photos .photo .author{
+        padding-top: 2px;
+        font-size: 0.8em;
+      }
+            
+      /* Login page */  
+      #outer {height: 500px; overflow: hidden; position: relative; width: 100%;}
+      #outer[id] {display: table; position: static;}
+      
+      #middle {position: absolute; top: 50%; width: 100%; text-align: center;} /* for explorer only*/
+      #middle[id] {display: table-cell; vertical-align: middle; position: static;}
+      
+      #inner {position: relative; top: -50%; text-align: center;} /* for explorer only */
+      #inner {width: 52em; margin-left: auto; margin-right: auto;} /* for all browsers*/            
     </style>
   </head>
   <body>
-    <div id="container">
-      <form action="/find_user_by_url" method="get">
-        <input name="url"/>
-      </form>
+    {% ifequal username None %}
+    <div id="outer">
+      <div id="middle">    
+        <div id="inner">
+          <a href="/login" class="login_link">Login with Flickr</a>             
+        </div>
+      </div>
     </div>
+    {% else %}
+    <div class="header">                       
+      <p>Logged as {{username}}. Token: {{auth_token}}. <a href="/logout">logout</a></p>
+    </div>        
+    <div id="container">
+      <div class="photos">
+        <table id="photos_table">
+          {% include "_photos.html" %}          
+        </table>
+      </div>  
+    </div>
+  {% endifequal %}    
   </body>
 </html>

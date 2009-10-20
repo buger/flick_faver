@@ -1,81 +1,27 @@
-import cgi
-import os
-import re
-import time
 import datetime
-import random
 import logging
-import string
-import urllib
+import os
+import itertools
+
+import const
 
 from google.appengine.ext import webapp
-
-from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
-from google.appengine.ext import db
-from google.appengine.api import users
+from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api.labs import taskqueue
+from google.appengine.ext import db
 
-from google.appengine.api import urlfetch
-from xml.dom import minidom 
-
- 
-from config import *
+from google.appengine.api.urlfetch import DownloadError
 
 from appengine_utilities.sessions import Session
 
-FLICKR_API_KEY = 'e5504def2a46e4a654ace751ab1cca88'
-
-
-# For templates, using in tag clouds
-class Photo:
-    def __init__(self, photo_id, image_url, title, author, author_url, published):
-        self.photo_id = photo_id
-        self.image_url = image_url
-        self.title = title
-        self.author = author
-        self.author_url = author_url
-        self.published = published
-        
-def call_flickr_method(method, params):
-    return parse("http://api.flickr.com/services/rest/?method="+method+"&api_key="+FLICKR_API_KEY+"&"+params)
-
-def get_user_info_by_url(url):
-    result = call_flickr_method("flickr.urls.lookupUser","url="+url)    
-    return result
-
-def get_images_from_feed(url):
-    images = []
-    content = urlfetch.fetch(url).content
-    #raise StandardError, content
-    dom = minidom.parseString(content)
-    
-    for entry in dom.getElementsByTagName('entry'):
-        photo_id = re.search('.*\/(\d*)\/', entry.getElementsByTagName('id')[0].firstChild.data).group(1) 
-        title = entry.getElementsByTagName('title')[0].firstChild.data
-        author = entry.getElementsByTagName('name')[0].firstChild.data
-        author_url = entry.getElementsByTagName('uri')[0].firstChild.data
-        content = entry.getElementsByTagName('content')[0].firstChild.data
-        published_str = entry.getElementsByTagName('published')[0].firstChild.data            
-        published_date = datetime.datetime(*time.strptime(published_str, "%Y-%m-%dT%H:%M:%SZ")[:6])
-        
-        image_url = re.search('.*(http:\/\/farm.*_m\.jpg)', content).group(1)
-                        
-        photo = Photo(photo_id, image_url, title, author, author_url, published_date)
-        
-        images.insert(0, photo)
-            
-    return images
-
-def get_image_sizes(photo_id):
-    result = call_flickr_method("flickr.photos.getInfo","photo_id="+photo_id)
-
-def parse( url ) :
-   result = urlfetch.fetch(url)
-   if result.status_code == 200:
-       return minidom.parseString(result.content)  
-        
+from models import *
+from config import *
+import flickr
  
+ 
+PHOTOS_PER_LOAD = 30
+         
 def doRender(handler, tname='index.html', values={}, options = {}):
     temp = os.path.join(
         os.path.dirname(__file__),
@@ -90,7 +36,8 @@ def doRender(handler, tname='index.html', values={}, options = {}):
     handler.session = Session()
     
     try:
-        newval['username'] = handler.session['username']        
+        newval['username'] = handler.session['username']
+        newval['auth_token'] = handler.session['auth_token']        
     except KeyError:
         pass
     
@@ -108,40 +55,100 @@ def doRender(handler, tname='index.html', values={}, options = {}):
         handler.response.out.write(outstr)
         return True 
  
+def get_photos(page, start_from = None):    
+    offset = (page-1)*PHOTOS_PER_LOAD
+    
+    if start_from:                
+        start_from_photo = Photo.get(start_from)
+        
+        photos = Photo.gql("WHERE created_at < :1 ORDER BY created_at DESC", start_from_photo.created_at).fetch(PHOTOS_PER_LOAD, offset)
+    else:
+        photos = Photo.gql("ORDER BY created_at DESC").fetch(PHOTOS_PER_LOAD, offset)
+                        
+    # in groups of 3
+    photos_groups = itertools.izip(*[itertools.islice(photos, i, None, 3) for i in range(3)])
+    
+    return photos_groups
+        
+ 
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        doRender(self, "index.html")
+        session = Session()
+        session["username"] = "leonid.b"
+
+        photos_groups = get_photos(page = 1)
         
-class FindUserByUrlHandler(webapp.RequestHandler):
+        doRender(self, "index.html", {'photos_groups':photos_groups})
+        
+class LoadPhotosHandler(webapp.RequestHandler):
+    def post(self, page):        
+        page = int(page)
+        photo_key = self.request.get("photo_key")
+        
+        photos_groups = get_photos(page = page, start_from = photo_key)
+        
+        doRender(self, "_photos.html", {'photos_groups':photos_groups})
+              
+
+class LoginHandler(webapp.RequestHandler):
+    def get(self):                
+        self.redirect(flickr.FLICKR_AUTH_URL)
+        
+class AuthCallbackHandler(webapp.RequestHandler):
     def get(self):
-        info = get_user_info_by_url(self.request.get('url'))
-        status = info.getElementsByTagName('rsp')[0].getAttribute('stat')
+        try:
+            frob = self.request.get('frob')                        
+            
+            try:
+                user_info = flickr.get_user_info(frob)
+            except:
+                user_info = flickr.get_user_info(frob)
+                
+            user = User.get_by_key_name("u%s" % user_info.userid)
+            
+            session = Session()
+                    
+            if not user:
+                user = User(key_name = "u%s" % user_info.userid,
+                            userid   = user_info.userid,
+                            username = user_info.username,
+                            fullname = user_info.fullname,
+                            updated_at = datetime.datetime.now(),
+                            last_login = datetime.datetime.now())
+                user.put()
+                
+                taskqueue.Task(url="/task/update_contacts/%s" % user.key(), 
+                               params={'update_favorites':True}, method = 'GET').add("update-contacts")                           
+            else:
+                user.last_login = datetime.datetime.now()
+                
+                try:
+                    user.put()
+                except:
+                    user.put()
+                    
+            session["username"]   = user.username
+            session["userid"]     = user.userid
+            session["auth_token"] = user_info.auth_token        
+        except:
+            pass #Can't connect to server
+                                                                        
+        self.redirect("/")
         
-        if status == 'ok':
-            user_id = info.getElementsByTagName('user')[0].getAttribute('id')
-            user_code = info.getElementsByTagName('username')[0].firstChild.data
-        else:
-            error_msg = info.getElementsByTagName('err')[0].getAttribute('msg')
-            raise StandardError, error_msg
-           
-        html = ""
+class LogoutHandler(webapp.RequestHandler):
+    def get(self):
+        session = Session()
+        session.delete()
         
-        contacts = call_flickr_method("flickr.contacts.getPublicList", "user_id="+user_id)
+        self.redirect("/")        
         
-        images = []
-        for contact in contacts.getElementsByTagName('contact'):
-            images.extend(get_images_from_feed("http://api.flickr.com/services/feeds/photos_faves.gne?id="+contact.getAttribute('nsid')))
-        
-        images.sort(lambda a,b: cmp(a.published,b.published))    
-           
-        for image_url in [image.image_url for image in images]:
-            html += "<img src='"+image_url+"' style='margin: 10px'/>"
-        
-        self.response.out.write(html)
  
 application = webapp.WSGIApplication([
    ('/', MainHandler),
-   ('/find_user_by_url', FindUserByUrlHandler)
+   ('/photos/([^\/]*)', LoadPhotosHandler),
+   ('/login', LoginHandler),
+   ('/logout', LogoutHandler),
+   ('/auth_callback', AuthCallbackHandler)
    ], debug=True)
                 
 def main():
