@@ -5,6 +5,7 @@ import itertools
 
 import const
 
+from google.appengine.api import users
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
@@ -37,11 +38,13 @@ def doRender(handler, tname='index.html', values={}, options = {}):
     
     try:
         newval['username'] = handler.session['username']
+        newval['fullname'] = handler.session['username']
         newval['auth_token'] = handler.session['auth_token']        
     except KeyError:
         pass
     
-    newval['is_admin'] = True #users.is_current_user_admin()
+    
+    newval['is_admin'] = users.is_current_user_admin()
      
 #    handler.session = Session()
 #        newval['username'] = handler.session['username']
@@ -55,15 +58,19 @@ def doRender(handler, tname='index.html', values={}, options = {}):
         handler.response.out.write(outstr)
         return True 
  
-def get_photos(page, start_from = None):    
+def get_photos(page, start_from = None):
+    session = Session()
+    
+    current_user = db.Key.from_path('User',"u%s" % session['userid'])
+        
     offset = (page-1)*PHOTOS_PER_LOAD
     
     if start_from:                
         start_from_photo = Photo.get(start_from)
         
-        photos = Photo.gql("WHERE created_at < :1 ORDER BY created_at DESC", start_from_photo.created_at).fetch(PHOTOS_PER_LOAD, offset)
+        photos = Photo.gql("WHERE created_at < :1 AND ANCESTOR IS :2 ORDER BY created_at DESC", start_from_photo.created_at, current_user).fetch(PHOTOS_PER_LOAD, offset)
     else:
-        photos = Photo.gql("ORDER BY created_at DESC").fetch(PHOTOS_PER_LOAD, offset)
+        photos = Photo.gql("WHERE ANCESTOR IS :1 ORDER BY created_at DESC", current_user).fetch(PHOTOS_PER_LOAD, offset)
                         
     # in groups of 3
     photos_groups = itertools.izip(*[itertools.islice(photos, i, None, 3) for i in range(3)])
@@ -73,37 +80,45 @@ def get_photos(page, start_from = None):
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        session = Session()
-        session["username"] = "leonid.b"
-
-        photos_groups = get_photos(page = 1)
-        
-        doRender(self, "index.html", {'photos_groups':photos_groups})
+        doRender(self, "index.html")
         
 class LoadPhotosHandler(webapp.RequestHandler):
     def post(self, page):        
         page = int(page)
         photo_key = self.request.get("photo_key")
         
-        photos_groups = get_photos(page = page, start_from = photo_key)
+        session = Session()
+        
+        try:
+            userid = session['userid']
+            photos_groups = get_photos(page = page, start_from = photo_key)
+        except KeyError:                    
+            photos_groups = []     
         
         doRender(self, "_photos.html", {'photos_groups':photos_groups})
               
 
 class LoginHandler(webapp.RequestHandler):
-    def get(self):                
-        self.redirect(flickr.FLICKR_AUTH_URL)
+    def get(self):               
+        if self.request.get('userid'):
+            self.redirect("/auth_callback?userid=%s" % self.request.get('userid'))
+        else:
+            self.redirect(flickr.FLICKR_AUTH_URL)
         
 class AuthCallbackHandler(webapp.RequestHandler):
     def get(self):
         try:
-            frob = self.request.get('frob')                        
-            
-            try:
-                user_info = flickr.get_user_info(frob)
-            except:
-                user_info = flickr.get_user_info(frob)
+            if self.request.get('userid'):
+                user_info = flickr.FlickrUserInfo("", self.request.get('userid'), self.request.get('userid'), "")
+            else:
+                frob = self.request.get('frob')                        
                 
+                try:
+                    user_info = flickr.get_user_info(frob)
+                except:
+                    user_info = flickr.get_user_info(frob)                
+            
+        
             user = User.get_by_key_name("u%s" % user_info.userid)
             
             session = Session()
@@ -128,10 +143,11 @@ class AuthCallbackHandler(webapp.RequestHandler):
                     user.put()
                     
             session["username"]   = user.username
+            session["fullname"]   = user.fullname
             session["userid"]     = user.userid
             session["auth_token"] = user_info.auth_token        
-        except:
-            pass #Can't connect to server
+        except ValueError:
+            pass
                                                                         
         self.redirect("/")
         
@@ -152,6 +168,9 @@ application = webapp.WSGIApplication([
    ], debug=True)
                 
 def main():
+    if os.environ.get('SERVER_SOFTWARE') == 'Development/1.0':
+        os.environ['USER_IS_ADMIN'] = '1'
+    
     run_wsgi_app(application)
  
 if __name__ == '__main__':

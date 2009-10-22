@@ -1,5 +1,6 @@
 indexes:
-- kind: Video
+- kind: Photo
+  ancestor: yes
   properties:
-  - name: author
-  - name: status
+  - name: created_at
+    direction: desc

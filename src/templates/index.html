@@ -5,38 +5,7 @@
     <meta name="description" content="Take everithing from your flickr, find best photos" />
   
     <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js"></script>
-    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/reset/reset-min.css">
-    <script type="text/javascript">
-    
-      function scroll(){
-        dimensions = document.viewport.getDimensions()       
-        scroll_offset = document.viewport.getScrollOffsets()
-       
-        if((scroll_offset.top+window.innerHeight+400) > dimensions.height){
-          loadPhotos()
-        }       
-      }
-      window.onscroll = scroll;
-            
-      function loadPhotos(){
-        if(!document.loading){
-          document.loading = true
-          
-          if (document.current_page == undefined)
-            document.current_page = 1
-
-          new Ajax.Request("/photos/"+(document.current_page+1),{
-            onSuccess: function(response) {
-              $('photos_table').insert({bottom: response.responseText})
-              
-              document.loading = false
-              document.current_page += 1
-            }
-          })      
-        }
-      }
-    </script>    
-        
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/reset/reset-min.css">        
     <style>      
       * {
         border: 0px;
@@ -45,7 +14,8 @@
       body
       {
         text-align: center;
-        background: #f9f9f9;
+        height: 100%;
+        font-family: verdana;
       }
       
       div#container
@@ -59,9 +29,13 @@
       a.login_link {
         padding: 20px;
         border: 1px solid #ccc;
-        background: #eee;
+        background: #C3D9FF;
         font-size: 3em;
-        color: purple;        
+        color: #333;
+        
+        border-radius: 10px;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;        
       }        
             
       div#inner h1 {
@@ -70,9 +44,39 @@
         font-family: Verdana;
       }
       
+      div#inner .slogan {
+        font-size: 2.5em;
+        color: #666;
+        margin-bottom: 50px;
+      }
+      
       div.header {
-        background: #c4ccff;
+        background: #C3D9FF;
         height: 50px;
+        font-size: 2em;
+        padding-top: 10px;
+        text-align: left;
+        padding-left: 20px;
+      }
+      
+      div.header .slogan {
+        color: #888;
+        font-size: 1em;
+        margin-left: 30px;
+      }
+      
+      a#blog_link {
+        position: absolute;
+        right: 20px;
+        top: 70px;
+        font-size: 2em;
+        font-family: verdana;
+        color: #36393D;
+        text-decoration: none;
+      }
+      
+      a#blog_link:hover {
+        text-decoration: underline;
       }
       
       div.photos .group_start td {
@@ -87,7 +91,7 @@
       div.photos .photo .title{
         padding-bottom: 2px;
         font-size: 0.8em;
-        text-align: right;
+        text-align: left;
       }
       
       div.photos .photo .title a {
@@ -98,38 +102,178 @@
         padding-top: 2px;
         font-size: 0.8em;
       }
+      
+      div#loader {
+        font-size: 2em;
+        color: #ccc;
+        text-align: center;
+        margin-top: 20px;
+        margin-bottom: 50px;
+        padding: 5px;        
+      }
+      
+      div#loader span {
+        background: url(/images/ajax-loader.gif) center left no-repeat;
+        padding-left: 55px;
+      }
+      
+      a#twitter {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+      }
+      
+      a#gappengine {
+        position: absolute;
+        top: 62px;
+        left: 5px;
+      }            
             
       /* Login page */  
       #outer {height: 500px; overflow: hidden; position: relative; width: 100%;}
       #outer[id] {display: table; position: static;}
       
-      #middle {position: absolute; top: 50%; width: 100%; text-align: center;} /* for explorer only*/
+      #middle {position: absolute; top: 50%; width: 100%; left: 0px; text-align: center;} /* for explorer only*/
       #middle[id] {display: table-cell; vertical-align: middle; position: static;}
       
       #inner {position: relative; top: -50%; text-align: center;} /* for explorer only */
-      #inner {width: 52em; margin-left: auto; margin-right: auto;} /* for all browsers*/            
+      #inner {width: 52em; margin-left: auto; margin-right: auto; //padding-bottom: 40px;} /* for all browsers*/            
     </style>
   </head>
   <body>
+    <a href="http://blog.flickfaver.com" id="blog_link" title="Blog">Blog</a>    
     {% ifequal username None %}
+    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter_white.gif"/></a>    
     <div id="outer">
       <div id="middle">    
         <div id="inner">
-          <a href="/login" class="login_link">Login with Flickr</a>             
+          <div class="slogan">Easy way to track your friend favorites</div>
+          <a href="/login" class="login_link">Login with Flickr</a>          
+          {% if is_admin %}
+          <br/>
+          <form action="/login">
+            <input name="userid" value="13779206@N08" />
+          </form>
+          {% endif %}          
         </div>
       </div>
     </div>
     {% else %}
+    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter.gif"/></a>
+    <a href="http://code.google.com/appengine/" id="gappengine" title="Powered by Google app engine"><img src="/images/gappengine_32.png"/></a>  
     <div class="header">                       
-      <p>Logged as {{username}}. Token: {{auth_token}}. <a href="/logout">logout</a></p>
+      <span>Hello {{username}}</span>
+      <!-- 
+      <span class="slogan">Take best from your flickr</span>
+      -->      
     </div>        
     <div id="container">
       <div class="photos">
         <table id="photos_table">
-          {% include "_photos.html" %}          
         </table>
+        <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>
       </div>  
     </div>
-  {% endifequal %}    
+ 
+    <script type="text/javascript">
+      function scrollDimensions(){
+        var dimensions = new Array(2)
+
+        if(window.innerHeight && window.scrollMaxY){
+            dimensions[0] = document.body.scrollWidth
+            dimensions[1] = window.innerHeight + window.scrollMaxY
+        } else 
+          if(document.body.scrollHeight > document.body.offsetHeight){
+            dimensions[0] = document.body.scrollWidth
+            dimensions[1] = document.body.scrollHeight
+        } else{
+            dimensions[0] = document.body.offsetWidth
+            dimensions[1] = document.body.offsetHeight
+        }
+
+        return(dimensions)
+      }  
+    
+      function scroll(){
+        var scroll_dimensions = scrollDimensions()       
+        var scroll_offset = document.body.scrollTop       
+        var window_height = typeof( window.innerWidth ) == 'number' ? window.innerWidth : document.body.clientHeight
+        
+        if((scroll_offset+window_height+400) > scroll_dimensions[1]){
+          loadPhotos()
+        }       
+      }
+      window.onscroll = scroll;
+            
+      function loadPhotos(repeat_counter){
+        if(!document.loading){
+          document.loading = true
+          
+          if (document.current_page == undefined)
+            document.current_page = 0
+
+          $('loader').show()
+          
+          new Ajax.Request("/photos/"+(document.current_page+1),{
+            onSuccess: function(response) {
+              if(response.status == "200"){
+                responseText = response.responseText
+  
+                if(responseText.blank()){
+                  if(repeat_counter == undefined)
+                    repeat_counter = 0
+  
+                  if(repeat_counter < 10 && document.current_page == 0){
+                    loadPhotos.delay(1, repeat_counter+1)
+                  }else{
+                    $('loader').update("Something went wrong. Try to refresh page")
+                  }
+                }else{
+                  $('loader').hide()
+                  document.current_page += 1                
+                  $('photos_table').insert({bottom: response.responseText})
+                }
+                
+                document.loading = false
+              }else{
+                $('loader').update("Something went wrong. Try to refresh page")
+              }
+            }
+          })      
+        }
+      }   
+
+      loadPhotos()
+    </script>       
+    
+    <script type="text/javascript">
+      var uservoiceJsHost = ("https:" == document.location.protocol) ? "https://uservoice.com" : "http://cdn.uservoice.com";
+      document.write(unescape("%3Cscript src='" + uservoiceJsHost + "/javascripts/widgets/tab.js' type='text/javascript'%3E%3C/script%3E"))
+    </script>
+    <script type="text/javascript">
+    UserVoice.Tab.show({ 
+      /* required */
+      key: 'flickfaver',
+      host: 'flickfaver.uservoice.com', 
+      forum: '31793', 
+      /* optional */
+      alignment: 'right',
+      background_color:'#36393D', 
+      text_color: 'white',
+      hover_color: '#666',
+      lang: 'en'
+    })
+    </script>                
+  {% endifequal %}  
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-11218453-1");
+      pageTracker._trackPageview();
+      } catch(err) {}
+  </script>  
   </body>
 </html>

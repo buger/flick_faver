@@ -1,5 +1,10 @@
 cron:
-- description: Process new video sources
-  url: /process/sources
-  schedule: every 1 minutes
+- description: Update favorites
+  url: /task/update_favorites_cron
+  schedule: every 30 minutes
+  timezone: Europe/Moscow
+
+- description: Update contacts
+  url: /task/update_contacts_cron
+  schedule: every 12 hours
   timezone: Europe/Moscow

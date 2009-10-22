@@ -1,7 +1,7 @@
 {% for photo_group in photos_groups %}
 <tr {% if forloop.counter0|divisibleby:2 %}class="group_start"{% endif %}>
   {% for photo in photo_group %}
-  <td valign="top" class="photo" align="right" id="{{photo.photoid}}">
+  <td valign="top" class="photo" align="left" id="{{photo.photoid}}">
     <div class="title"><a href="{{photo.author_uri}}" target="_blank">{{photo.author}}</a></div>
     <div>              
       <a href="{{photo.uri}}" target="_blank">

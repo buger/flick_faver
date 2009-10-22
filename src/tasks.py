@@ -62,7 +62,7 @@ class UpdateContactsHandler(webapp.RequestHandler):
 
 class UpdateContactsFavesHandler(webapp.RequestHandler):
     def get(self, user_key):
-        CONTACTS_PER_PAGE = 10
+        PHOTOS_PER_CONTACT = 5
         
         user = User.get(user_key)
                 
@@ -76,7 +76,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
         photos = []
         
         items = flickr.get_contacts_faves(user_key = user_key,
-                                          truncate = CONTACTS_PER_PAGE,
+                                          truncate = PHOTOS_PER_CONTACT,
                                           page = page)
         
         for item in items:
@@ -135,6 +135,25 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                 user.put()
             except:
                 user.put()
+                
+
+class UpdateFavoritesCronHandler(webapp.RequestHandler):
+    def get(self):
+        user_keys = db.GqlQuery("SELECT __key__ FROM User WHERE updated_at < :1", datetime.datetime.today()-datetime.timedelta(minutes=29))
+        
+        for key in user_keys:
+            taskqueue.Task(url="/task/update_contacts_faves/%s" % key, method = 'GET').add("update-photos")
+            
+            
+            
+class UpdateContactsCronHandler(webapp.RequestHandler):
+    def get(self):  
+        user_keys = db.GqlQuery("SELECT __key__ FROM User")
+        
+        for key in user_keys:
+            taskqueue.Task(url="/task/update_contacts/%s" % key, method = 'GET').add("update-contacts")                                       
+            
+            
               
 class ClearDatabaseHandler(webapp.RequestHandler):
     def get(self):
@@ -152,7 +171,9 @@ class ClearDatabaseHandler(webapp.RequestHandler):
 application = webapp.WSGIApplication([
    ('/task/update_contacts/([^\/]*)', UpdateContactsHandler),
    ('/task/update_contacts_faves/([^\/]*)', UpdateContactsFavesHandler),
-   ('/task/clear_database', ClearDatabaseHandler)
+   ('/task/clear_database', ClearDatabaseHandler),
+   ('/task/update_favorites_cron', UpdateFavoritesCronHandler)
+   ('/task/update_contacts_cron', UpdateFavoritesCronHandler)
    ], debug=True)
                 
 def main():
