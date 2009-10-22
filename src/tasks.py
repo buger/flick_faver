@@ -5,6 +5,7 @@ import time
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api.labs import taskqueue
+from google.appengine.ext import db
 
 import flickr
 from models import *
@@ -23,15 +24,24 @@ class UpdateContactsHandler(webapp.RequestHandler):
             except ValueError:
                 page = 1
             
-            contacts_xml = flickr.call_method("flickr.contacts.getPublicList", 
-                                              "user_id=%s&per_page=%s&page=%s" % (user.userid, CONTACTS_PER_PAGE, page))
+            logging.info("params: %s" % "user_id=%s&per_page=%s&page=%s" % (user.userid, CONTACTS_PER_PAGE, page))
+            response = flickr.call_method("flickr.contacts.getPublicList", 
+                                          "user_id=%s&per_page=%s&page=%s" % (user.userid, CONTACTS_PER_PAGE, page))
             
             contacts = []
             
-            for contact_xml in contacts_xml.getElementsByTagName('contact'):
-                contact_key = db.GqlQuery("SELECT __key__ FROM Contact WHERE __key__ = Key('Contact','c%s')" % contact_xml.getAttribute('nsid')).get()
+            contacts_root_xml = response.getElementsByTagName('contacts')[0]
+            max_pages = int(contacts_root_xml.getAttribute('pages'))
+
+            contacts_xml = response.getElementsByTagName('contact')
+            logging.info("Contacts size xml: %s" % len(contacts_xml))
+
+            for contact_xml in contacts_xml:
+                contact_key = db.Key.from_path("User","u%s" % user.userid, "Contact","c%s" % contact_xml.getAttribute('nsid'))
+
+                contact = Contact.get(contact_key)
                 
-                if contact_key is None:
+                if contact is None:
                     ignored = int(contact_xml.getAttribute('ignored')) == 1
                                     
                     contact = Contact(key_name="c%s" % contact_xml.getAttribute('nsid'),
@@ -44,15 +54,16 @@ class UpdateContactsHandler(webapp.RequestHandler):
                                     
                     contacts.insert(0, contact)
                 
+            logging.info("Contacts size for put: %s" % len(contacts))
             db.put(contacts)                    
             
             if self.request.get('update_favorites'):
                 task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, params={'page': 1}, method = 'GET')
                 task.add("non-blocking") # Put first update in not blocking queue
-                        
-            page = page + 1
-            
-            if len(contacts) == CONTACTS_PER_PAGE:
+                                        
+            if page <= max_pages:
+                page = page + 1
+
                 taskqueue.Task(url="/task/update_contacts/%s" % user_key, 
                                params={'page': page}, method = 'GET').add("update-contacts")
         else:

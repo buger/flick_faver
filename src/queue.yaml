@@ -1,7 +1,7 @@
 queue:
 - name: update-photos
   rate: 5/s
-  bucket_size: 10
+  bucket_size: 5
 
 - name: update-contacts
   rate: 2/s
