@@ -1,6 +1,6 @@
 queue:
 - name: update-photos
-  rate: 20/m
+  rate: 19/m
   bucket_size: 5
 
 - name: update-contacts
