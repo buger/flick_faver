@@ -172,7 +172,7 @@ application = webapp.WSGIApplication([
    ('/task/update_contacts/([^\/]*)', UpdateContactsHandler),
    ('/task/update_contacts_faves/([^\/]*)', UpdateContactsFavesHandler),
    ('/task/clear_database', ClearDatabaseHandler),
-   ('/task/update_favorites_cron', UpdateFavoritesCronHandler)
+   ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateFavoritesCronHandler)
    ], debug=True)
                 
