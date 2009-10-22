@@ -12,7 +12,7 @@ class ContactsHandler(webapp.RequestHandler):
         except ValueError:
             page = 1        
         
-        contacts = Contact.gql("WHERE ANCESTOR IS :parent", parent = db.Key(user_key)).fetch(CONTACTS_PER_PAGE, page*CONTACTS_PER_PAGE)
+        contacts = Contact.gql("WHERE ANCESTOR IS :parent", parent = db.Key(user_key)).fetch(CONTACTS_PER_PAGE, (page-1)*CONTACTS_PER_PAGE)
         
         csv = ""
         

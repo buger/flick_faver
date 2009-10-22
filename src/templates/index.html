@@ -216,28 +216,28 @@
           
           new Ajax.Request("/photos/"+(document.current_page+1),{
             onSuccess: function(response) {
-              if(response.status == "200"){
-                responseText = response.responseText
-  
-                if(responseText.blank()){
-                  if(repeat_counter == undefined)
-                    repeat_counter = 0
-  
-                  if(repeat_counter < 10 && document.current_page == 0){
+              responseText = response.responseText
+
+              if(responseText.blank()){
+                if(repeat_counter == undefined)
+                  repeat_counter = 0
+                
+                if(document.current_page == 0){
+                  if(repeat_counter < 10){
                     loadPhotos.delay(1, repeat_counter+1)
                   }else{
                     $('loader').update("Something went wrong. Try to refresh page")
                   }
                 }else{
-                  $('loader').hide()
-                  document.current_page += 1                
-                  $('photos_table').insert({bottom: response.responseText})
+                    $('loader').update("The End :)")
                 }
-                
-                document.loading = false
               }else{
-                $('loader').update("Something went wrong. Try to refresh page")
+                $('loader').hide()
+                document.current_page += 1                
+                $('photos_table').insert({bottom: response.responseText})
               }
+              
+              document.loading = false
             }
           })      
         }

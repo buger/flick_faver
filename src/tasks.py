@@ -62,7 +62,7 @@ class UpdateContactsHandler(webapp.RequestHandler):
 
 class UpdateContactsFavesHandler(webapp.RequestHandler):
     def get(self, user_key):
-        PHOTOS_PER_CONTACT = 5
+        PHOTOS_PER_CONTACT = 10
         
         user = User.get(user_key)
                 
@@ -81,10 +81,10 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
         
         for item in items:
             photo_key_name = "p%s" % item['image_id']
-             
+            
             photo = Photo.get_by_key_name(photo_key_name, user)
             
-            favorited_by = str(db.Key.from_path('User', "u%s" % item['favorited_by']))
+            favorited_by = str(db.Key.from_path("User","u%s" % user.userid, "Contact","c%s" % item['favorited_by']))
                     
             if photo is None:            
                 published_date = datetime.datetime(*time.strptime(item['published'], "%Y-%m-%dT%H:%M:%SZ")[:6])                        
@@ -139,7 +139,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
 
 class UpdateFavoritesCronHandler(webapp.RequestHandler):
     def get(self):
-        user_keys = db.GqlQuery("SELECT __key__ FROM User WHERE updated_at < :1", datetime.datetime.today()-datetime.timedelta(minutes=29))
+        user_keys = db.GqlQuery("SELECT __key__ FROM User WHERE updated_at < :1", datetime.datetime.today()-datetime.timedelta(minutes=29))        
         
         for key in user_keys:
             taskqueue.Task(url="/task/update_contacts_faves/%s" % key, method = 'GET').add("update-photos")
@@ -147,7 +147,7 @@ class UpdateFavoritesCronHandler(webapp.RequestHandler):
             
             
 class UpdateContactsCronHandler(webapp.RequestHandler):
-    def get(self):  
+    def get(self):        
         user_keys = db.GqlQuery("SELECT __key__ FROM User")
         
         for key in user_keys:
@@ -157,11 +157,11 @@ class UpdateContactsCronHandler(webapp.RequestHandler):
               
 class ClearDatabaseHandler(webapp.RequestHandler):
     def get(self):
-        items_for_delete = User.all().fetch(100)
-        if len(items_for_delete) == 0:
-            items_for_delete = Contact.all().fetch(100)
-            if len(items_for_delete) == 0:
-                items_for_delete = Photo.all().fetch(100)    
+        #items_for_delete = User.all().fetch(100)
+        #if len(items_for_delete) == 0:
+        #    items_for_delete = Contact.all().fetch(100)
+        #    if len(items_for_delete) == 0:
+        items_for_delete = Photo.all().fetch(100)    
         
         if len(items_for_delete) != 0:
             db.delete(items_for_delete)            
@@ -173,7 +173,7 @@ application = webapp.WSGIApplication([
    ('/task/update_contacts_faves/([^\/]*)', UpdateContactsFavesHandler),
    ('/task/clear_database', ClearDatabaseHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
-   ('/task/update_contacts_cron', UpdateFavoritesCronHandler)
+   ('/task/update_contacts_cron', UpdateContactsCronHandler)
    ], debug=True)
                 
 def main():
