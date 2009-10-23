@@ -10,3 +10,7 @@ UserStateUnRegistred = 201
 #Photo
 PhotoTypeContact = 301
 PhotoTypeFavorite = 302
+
+#Processing states
+StateWaiting = 0
+StateProcessing = 1

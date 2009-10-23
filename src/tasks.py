@@ -1,6 +1,7 @@
 import logging
 import datetime
 import time
+import itertools
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
@@ -58,7 +59,8 @@ class UpdateContactsHandler(webapp.RequestHandler):
             db.put(contacts)                    
             
             if self.request.get('update_favorites'):
-                task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, params={'page': 1}, method = 'GET')
+                task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, 
+                                      params={'page': 1, 'travel-in-time': 1, 'non-blocking': 1}, method = 'GET')
                 task.add("non-blocking") # Put first update in not blocking queue
                                         
             if page <= max_pages:
@@ -90,57 +92,96 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                                           truncate = PHOTOS_PER_CONTACT,
                                           page = page)
         
-        for item in items:
-            photo_key_name = "p%s" % item['image_id']
+        
+        if self.request.get('travel-in-time'):
+            last_photo = db.GqlQuery("SELECT * FROM Photo WHERE ANCESTOR IS :1 ORDER BY created_at", user).get()
             
-            photo = Photo.get_by_key_name(photo_key_name, user)
-            
-            favorited_by = str(db.Key.from_path("User","u%s" % user.userid, "Contact","c%s" % item['favorited_by']))
-                    
-            if photo is None:            
-                published_date = datetime.datetime(*time.strptime(item['published'], "%Y-%m-%dT%H:%M:%SZ")[:6])                        
+            if last_photo:
+                start_from_time = last_photo.created_at - datetime.timedelta(seconds = 60)
+            else:
+                start_from_time = datetime.datetime.now()
+        else:
+            start_from_time = 0
+                        
+        # in groups of PHOTOS_PER_CONTACT, each group will have photos from one contact 
+        contact_groups = itertools.izip(*[itertools.islice(items, i, None, PHOTOS_PER_CONTACT) for i in range(PHOTOS_PER_CONTACT)])
+        
+        counter = 1
+        
+        for group in contact_groups:
+            favorited_by = str(db.Key.from_path("User","u%s" % user.userid, "Contact","c%s" % group[0]['favorited_by']))
+                                    
+            for item in group:
+                photo_key_name = "p%s" % item['image_id']
                 
-                photo = Photo(key_name = photo_key_name,
-                              parent   = user,
-                              photo_id = int(item['image_id']),                              
-                              uri      = item['link'],
-                              title    = item['title'],
-                              
-                              phtoto_type = const.PhotoTypeFavorite,
-                              
-                              image_url   = item['image_url'],
-                              image_s_url = item['image_s_url'],
-                              image_m_url = item['image_m_url'],
-                              
-                              favorited_by    = [favorited_by],                              
-                              favorited_count = 1,
-                              
-                              author     = item['author']['name'],
-                              author_uri = item['author']['uri'],
-                              
-                              published = published_date                                                        
-                              )
+                try:
+                    photo = Photo.get_by_key_name(photo_key_name, user)
+                except:
+                    continue
                 
-                photos.append(photo)                
-            else:                
-                try:                    
-                    photo.favorited_by.index(favorited_by)                                    
-                except ValueError:                    
-                    photo.favorited_by.append(favorited_by)
-                    photo.favorited_count += 1             
+                        
+                if photo is None:            
+                    published_date = datetime.datetime(*time.strptime(item['published'], "%Y-%m-%dT%H:%M:%SZ")[:6])                                                                
                     
-                    photos.append(photo)                
+                    photo = Photo(key_name = photo_key_name,
+                                  parent   = user,
+                                  photo_id = int(item['image_id']),                              
+                                  uri      = item['link'],
+                                  title    = item['title'],
+                                  
+                                  phtoto_type = const.PhotoTypeFavorite,
+                                  
+                                  image_url   = item['image_url'],
+                                  image_s_url = item['image_s_url'],
+                                  image_m_url = item['image_m_url'],
+                                  
+                                  favorited_by    = [favorited_by],                              
+                                  favorited_count = 1,
+                                  
+                                  author     = item['author']['name'],
+                                  author_uri = item['author']['uri'],
+                                  
+                                  published = published_date                                                        
+                                  )
+                    
+                    if self.request.get('travel-in-time'):
+                        photo.created_at = start_from_time - datetime.timedelta(microseconds=(10*counter))
+                    else:
+                        photo.created_at = datetime.datetime.now()
+                    
+                    photos.append(photo) 
+                    
+                    counter += 1               
+                else:                
+                    try:                    
+                        photo.favorited_by.index(favorited_by)
+                        
+                        logging.debug("breaking!:)")
+                        break #go back to parent cycle, all next photos already in database                                    
+                    except ValueError:                    
+                        photo.favorited_by.append(favorited_by)
+                        photo.favorited_count += 1             
+                        
+                        photos.append(photo)   
             
             
         db.put(photos)
         
         if len(items) != 0:
             page = page + 1
-            taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, 
-                           params={'page': page}, method = 'GET').add("update-photos")
+            task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, 
+                                  params={'page': page, 
+                                          'non-blocking':self.request.get('non-blocking'), 
+                                          'travel-in-time': self.request.get('travel-in-time')}, 
+                                  method = 'GET')
+            
+            if self.request.get('non-blocking'):
+                task.add("non-blocking")
+            else:
+                task.add("update-photos")
         else:
             user.updated_at = datetime.datetime.now()
-            
+            user.processing_state = const.StateWaiting
             # We don't want to restart all queue, if user.put gives some errors
             try:
                 user.put()
@@ -150,12 +191,17 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
 
 class UpdateFavoritesCronHandler(webapp.RequestHandler):
     def get(self):
-        user_keys = db.GqlQuery("SELECT __key__ FROM User WHERE updated_at < :1", datetime.datetime.today()-datetime.timedelta(minutes=29))        
+        users = db.GqlQuery("SELECT * FROM User WHERE updated_at < :1 AND processing_state = :2", 
+                           datetime.datetime.today()-datetime.timedelta(minutes=60), const.StateWaiting) 
         
-        for key in user_keys:
-            taskqueue.Task(url="/task/update_contacts_faves/%s" % key, method = 'GET').add("update-photos")
+        for user in users:
+            user.processing_state = const.StateProcessing
+            user.put()
             
+            taskqueue.Task(url="/task/update_contacts_faves/%s" % user.key(), method = 'GET').add("update-photos")        
+        
             
+                    
             
 class UpdateContactsCronHandler(webapp.RequestHandler):
     def get(self):        
@@ -179,12 +225,23 @@ class ClearDatabaseHandler(webapp.RequestHandler):
             taskqueue.Task(url="/task/clear_database", method = 'GET').add("non-blocking")
 
 
+class UserUpdateProcessingStateHandler(webapp.RequestHandler):
+    def get(self):
+        users = User.all().fetch(300)
+        
+        for user in users:
+            user.processing_state = const.StateWaiting
+        
+        db.put(users)
+
 application = webapp.WSGIApplication([
    ('/task/update_contacts/([^\/]*)', UpdateContactsHandler),
    ('/task/update_contacts_faves/([^\/]*)', UpdateContactsFavesHandler),
    ('/task/clear_database', ClearDatabaseHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
-   ('/task/update_contacts_cron', UpdateContactsCronHandler)
+   ('/task/update_contacts_cron', UpdateContactsCronHandler),
+   
+   ('/task/update_processing_state', UserUpdateProcessingStateHandler)   
    ], debug=True)
                 
 def main():

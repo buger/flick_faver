@@ -19,7 +19,10 @@ class User(db.Model):
     
     last_login = db.DateTimeProperty()
     updated_at = db.DateTimeProperty() # Last favorites update 
-    created_at = db.DateTimeProperty(auto_now_add = True)            
+    created_at = db.DateTimeProperty(auto_now_add = True)
+    
+    processing_state = db.IntegerProperty(choices=set([const.StateProcessing, const.StateWaiting]))      
+          
 
 class Photo(db.Model):        
     photo_type = db.IntegerProperty()
@@ -39,7 +42,7 @@ class Photo(db.Model):
     author_uri = db.LinkProperty()
     
     published_at = db.DateTimeProperty()
-    created_at   = db.DateTimeProperty(auto_now_add = True)
+    created_at   = db.DateTimeProperty()
     updated_at   = db.DateTimeProperty(auto_now = True)       
 
 class Contact(db.Model):

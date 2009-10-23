@@ -129,7 +129,9 @@ class AuthCallbackHandler(webapp.RequestHandler):
                             username = user_info.username,
                             fullname = user_info.fullname,
                             updated_at = datetime.datetime.now(),
-                            last_login = datetime.datetime.now())
+                            last_login = datetime.datetime.now(),
+                            
+                            processing_state = const.StateProcessing)
                 user.put()
                 
                 taskqueue.Task(url="/task/update_contacts/%s" % user.key(), 

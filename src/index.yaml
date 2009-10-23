@@ -4,3 +4,14 @@ indexes:
   properties:
   - name: created_at
     direction: desc
+
+- kind: Photo
+  ancestor: yes
+  properties:
+  - name: created_at
+
+- kind: User
+  properties:
+  - name: processing_state
+  - name: updated_at
+    

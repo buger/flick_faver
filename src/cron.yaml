@@ -1,9 +1,9 @@
 cron:
-- description: Update favorites
+- description: Update contacts faver
   url: /task/update_favorites_cron
-  schedule: every 30 minutes
+  schedule: every 5 minutes
   timezone: Europe/Moscow
-
+  
 - description: Update contacts
   url: /task/update_contacts_cron
   schedule: every 12 hours
