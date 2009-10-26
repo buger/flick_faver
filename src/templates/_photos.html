@@ -1,5 +1,18 @@
+{% if first_date%}
+<tr class="time_header">
+  <td colspan="3" align="left">
+    {{ first_date|pretty_date|capfirst }}
+  </td>
+</tr>
+{% endif %}
 {% for photo_group in photos_groups %}
-<tr {% if forloop.counter0|divisibleby:2 %}class="group_start"{% endif %}>
+
+{% if forloop.first and first_date %}
+<tr>
+{% else %}
+<tr {% if forloop.counter0|divisibleby:2  %}class="group_start"{% endif %}>
+{% endif %}
+
   {% for photo in photo_group %}
   <td valign="top" class="photo" align="left" {% if forloop.parentloop.last and forloop.last %} photo_id="{{photo.photo_id}}" {% endif %}>
     <div class="title"><a href="{{photo.author_uri}}" target="_blank">{{photo.author}}</a></div>

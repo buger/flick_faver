@@ -18,9 +18,11 @@ from appengine_utilities.sessions import Session
 
 from models import *
 from config import *
+import utils
 import flickr
  
- 
+template.register_template_library('template_filters.date')
+
 PHOTOS_PER_LOAD = 30
          
 def doRender(handler, tname='index.html', values={}, options = {}):
@@ -65,11 +67,11 @@ def get_photos(page, start_from = None):
         
     offset = (page-1)*PHOTOS_PER_LOAD
     
-    start_from = None
+    start_from_photo = None
     
     if start_from:                        
         start_from_photo = Photo.get_by_key_name("p%s" % start_from, current_user)
-        
+                
         photos = Photo.gql("WHERE created_at < :1 AND ANCESTOR IS :2 ORDER BY created_at DESC", start_from_photo.created_at, current_user).fetch(PHOTOS_PER_LOAD)
     else:
         photos = Photo.gql("WHERE ANCESTOR IS :1 ORDER BY created_at DESC", current_user).fetch(PHOTOS_PER_LOAD, offset)
@@ -77,7 +79,7 @@ def get_photos(page, start_from = None):
     # in groups of 3
     photos_groups = itertools.izip(*[itertools.islice(photos, i, None, 3) for i in range(3)])
     
-    return photos_groups
+    return (photos_groups, start_from_photo)
         
  
 class MainHandler(webapp.RequestHandler):
@@ -89,15 +91,18 @@ class LoadPhotosHandler(webapp.RequestHandler):
         page = int(page)
         photo_key = self.request.get("last_photo_id")        
         
-        session = Session()
-        
         try:
-            userid = session['userid']
-            photos_groups = get_photos(page = page, start_from = photo_key)
+            photos_groups, last_photo = get_photos(page = page, start_from = photo_key)
         except KeyError:                    
-            photos_groups = []     
-        
-        doRender(self, "_photos.html", {'photos_groups':photos_groups})
+            photos_groups = []
+            last_photo = None
+            
+        first_date = None
+        for group in photos_groups:
+            first_date = group[0].created_at
+            break        
+         
+        doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
               
 
 class LoginHandler(webapp.RequestHandler):
