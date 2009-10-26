@@ -65,10 +65,12 @@ def get_photos(page, start_from = None):
         
     offset = (page-1)*PHOTOS_PER_LOAD
     
-    if start_from:                
-        start_from_photo = Photo.get(start_from)
+    start_from = None
+    
+    if start_from:                        
+        start_from_photo = Photo.get_by_key_name("p%s" % start_from, current_user)
         
-        photos = Photo.gql("WHERE created_at < :1 AND ANCESTOR IS :2 ORDER BY created_at DESC", start_from_photo.created_at, current_user).fetch(PHOTOS_PER_LOAD, offset)
+        photos = Photo.gql("WHERE created_at < :1 AND ANCESTOR IS :2 ORDER BY created_at DESC", start_from_photo.created_at, current_user).fetch(PHOTOS_PER_LOAD)
     else:
         photos = Photo.gql("WHERE ANCESTOR IS :1 ORDER BY created_at DESC", current_user).fetch(PHOTOS_PER_LOAD, offset)
                         
@@ -85,7 +87,7 @@ class MainHandler(webapp.RequestHandler):
 class LoadPhotosHandler(webapp.RequestHandler):
     def post(self, page):        
         page = int(page)
-        photo_key = self.request.get("photo_key")
+        photo_key = self.request.get("last_photo_id")        
         
         session = Session()
         

@@ -214,7 +214,11 @@
 
           $('loader').show()
           
-          new Ajax.Request("/photos/"+(document.current_page+1),{
+          var url = "/photos/"+(document.current_page+1)
+          if(document.last_photo_id)
+            url += "?last_photo_id="+document.last_photo_id
+          
+          new Ajax.Request(url,{
             onSuccess: function(response) {
               responseText = response.responseText
 
@@ -233,8 +237,15 @@
                 }
               }else{
                 $('loader').hide()
-                document.current_page += 1                
-                $('photos_table').insert({bottom: response.responseText})
+                document.current_page += 1
+
+                regexp = /photo_id="(.*)"/                                   
+                match = response.responseText.match(regexp)
+                                
+                if(match[1])                
+                  document.last_photo_id = match[1]
+  
+                $('photos_table').insert({bottom: response.responseText})                
               }
               
               document.loading = false
