@@ -12,9 +12,11 @@ import flickr
 from models import *
 
 class UpdateContactsHandler(webapp.RequestHandler):
-    def get(self, user_key):
+    def get(self):
         CONTACTS_PER_PAGE = 50
-            
+        
+        user_key = self.request.get('user_key')
+        
         user = User.get(user_key)
         
         if user:
@@ -59,23 +61,28 @@ class UpdateContactsHandler(webapp.RequestHandler):
             db.put(contacts)                    
             
             if self.request.get('update_favorites'):
-                task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, 
-                                      params={'page': 1, 'travel-in-time': 1, 'non-blocking': 1}, method = 'GET')
+                task = taskqueue.Task(url="/task/update_contacts_faves", 
+                                      params={'user_key':user_key, 'page': 1, 'travel-in-time': 1, 'non-blocking': 1,'photos-per-contact':10}, method = 'GET')
                 task.add("non-blocking") # Put first update in not blocking queue
                                         
             if page <= max_pages:
                 page = page + 1
 
-                taskqueue.Task(url="/task/update_contacts/%s" % user_key, 
-                               params={'page': page}, method = 'GET').add("update-contacts")
+                taskqueue.Task(url="/task/update_contacts", 
+                               params={'user_key':user_key, 'page': page}, method = 'GET').add("update-contacts")
         else:
             self.response.out.write("Unknown user")
             logging.error("Can't update contacts. Unknown user %s" % user_key)
 
 
 class UpdateContactsFavesHandler(webapp.RequestHandler):
-    def get(self, user_key):
-        PHOTOS_PER_CONTACT = 10
+    def get(self):
+        user_key = self.request.get('user_key')
+        
+        if self.request.get('photos-per-contact'):
+            PHOTOS_PER_CONTACT = int(self.request.get('photos-per-contact'))
+        else:
+            PHOTOS_PER_CONTACT = 10
         
         user = User.get(user_key)
                 
@@ -164,15 +171,18 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                         
                         photos.append(photo)   
             
-            
+        logging.debug("New photos: %s" % len(photos))
+        
         db.put(photos)
         
         if len(items) != 0:
             page = page + 1
-            task = taskqueue.Task(url="/task/update_contacts_faves/%s" % user_key, 
-                                  params={'page': page, 
+            task = taskqueue.Task(url="/task/update_contacts_faves", 
+                                  params={'user_key': user_key,
+                                          'page': page, 
                                           'non-blocking':self.request.get('non-blocking'), 
-                                          'travel-in-time': self.request.get('travel-in-time')}, 
+                                          'travel-in-time': self.request.get('travel-in-time'),
+                                          'photos-per-contact': self.request.get('photos-per-contact')}, 
                                   method = 'GET')
             
             if self.request.get('non-blocking'):
@@ -192,23 +202,24 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
 class UpdateFavoritesCronHandler(webapp.RequestHandler):
     def get(self):
         users = db.GqlQuery("SELECT * FROM User WHERE updated_at < :1 AND processing_state = :2", 
-                           datetime.datetime.today()-datetime.timedelta(minutes=60), const.StateWaiting) 
+                            datetime.datetime.now()-datetime.timedelta(minutes=60), const.StateWaiting) 
         
-        for user in users:
-            user.processing_state = const.StateProcessing
-            user.put()
+        for user in users:            
+            # If user is active in 24 hours, update every hour, else one at day
+            yesterday = datetime.datetime.now()-datetime.timedelta(hours=24)
             
-            taskqueue.Task(url="/task/update_contacts_faves/%s" % user.key(), method = 'GET').add("update-photos")        
-        
-            
-                    
+            if user.last_login > yesterday or (user.last_login < yesterday and user.updated_at < yesterday):
+                taskqueue.Task(url="/task/update_contacts_faves", params={"user_key":user.key()},method = 'GET').add("update-photos")                                            
+                
+                user.processing_state = const.StateProcessing
+                user.put()                                 
             
 class UpdateContactsCronHandler(webapp.RequestHandler):
     def get(self):        
         user_keys = db.GqlQuery("SELECT __key__ FROM User")
         
         for key in user_keys:
-            taskqueue.Task(url="/task/update_contacts/%s" % key, method = 'GET').add("update-contacts")                                       
+            taskqueue.Task(url="/task/update_contacts", params={"user_key":key}, method = 'GET').add("update-contacts")                                       
             
             
               
@@ -235,8 +246,8 @@ class UserUpdateProcessingStateHandler(webapp.RequestHandler):
         db.put(users)
 
 application = webapp.WSGIApplication([
-   ('/task/update_contacts/([^\/]*)', UpdateContactsHandler),
-   ('/task/update_contacts_faves/([^\/]*)', UpdateContactsFavesHandler),
+   ('/task/update_contacts', UpdateContactsHandler),
+   ('/task/update_contacts_faves', UpdateContactsFavesHandler),
    ('/task/clear_database', ClearDatabaseHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateContactsCronHandler),

@@ -5,7 +5,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 class ContactsHandler(webapp.RequestHandler):
     def get(self, user_key):
-        CONTACTS_PER_PAGE = 10
+        CONTACTS_PER_PAGE = 5
         
         try:
             page = int(self.request.get('page'))

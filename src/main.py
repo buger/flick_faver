@@ -136,8 +136,8 @@ class AuthCallbackHandler(webapp.RequestHandler):
                             processing_state = const.StateProcessing)
                 user.put()
                 
-                taskqueue.Task(url="/task/update_contacts/%s" % user.key(), 
-                               params={'update_favorites':True}, method = 'GET').add("update-contacts")                           
+                taskqueue.Task(url="/task/update_contacts", 
+                               params={'user_key':user.key(), 'update_favorites':True}, method = 'GET').add("update-contacts")                           
             else:
                 user.last_login = datetime.datetime.now()
                 

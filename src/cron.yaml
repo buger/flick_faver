@@ -6,5 +6,5 @@ cron:
   
 - description: Update contacts
   url: /task/update_contacts_cron
-  schedule: every 12 hours
+  schedule: every 24 hours
   timezone: Europe/Moscow
