@@ -41,6 +41,8 @@ class Photo(db.Model):
     author     = db.StringProperty()
     author_uri = db.LinkProperty()
     
+    skill_levels = db.ListProperty(int)
+    
     published_at = db.DateTimeProperty()
     created_at   = db.DateTimeProperty()
     updated_at   = db.DateTimeProperty(auto_now = True)       

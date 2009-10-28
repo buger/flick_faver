@@ -167,8 +167,13 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                         break #go back to parent cycle, all next photos already in database                                    
                     except ValueError:                    
                         photo.favorited_by.append(favorited_by)
-                        photo.favorited_count += 1             
+                        photo.favorited_count += 1  
                         
+                        if photo.favorited_count > 4:                            
+                            photo.skill_levels = [1,2]
+                        else:
+                            photo.skill_levels = [1]    
+                                                           
                         photos.append(photo)   
             
         logging.debug("New photos: %s" % len(photos))
@@ -244,6 +249,25 @@ class UserUpdateProcessingStateHandler(webapp.RequestHandler):
             user.processing_state = const.StateWaiting
         
         db.put(users)
+        
+class UpdateSkillLevelHandler(webapp.RequestHandler):
+    def get(self):
+        photo_key = self.request.get('key')
+        
+        if photo_key:
+            photo = Photo.gql("WHERE __key__ > :1 ORDER BY __key__", db.Key(photo_key)).get()
+        else:
+            photo = Photo.gql("ORDER BY __key__").get()
+        
+        if photo.favorited_count > 4:                            
+            photo.skill_levels = [1,2]
+        else:
+            photo.skill_levels = [1]  
+        
+        photo.put()
+        
+        taskqueue.Task(url="/task/update_skill_level", params={"key":photo.key()}, method = 'GET').add("non-blocking")
+    
 
 application = webapp.WSGIApplication([
    ('/task/update_contacts', UpdateContactsHandler),
@@ -251,7 +275,7 @@ application = webapp.WSGIApplication([
    ('/task/clear_database', ClearDatabaseHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateContactsCronHandler),
-   
+   ('/task/update_skill_level', UpdateSkillLevelHandler),
    ('/task/update_processing_state', UserUpdateProcessingStateHandler)   
    ], debug=True)
                 
