@@ -82,7 +82,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
         if self.request.get('photos-per-contact'):
             PHOTOS_PER_CONTACT = int(self.request.get('photos-per-contact'))
         else:
-            PHOTOS_PER_CONTACT = 10
+            PHOTOS_PER_CONTACT = 20
         
         user = User.get(user_key)
                 
@@ -259,10 +259,12 @@ class UpdateSkillLevelHandler(webapp.RequestHandler):
         else:
             photo = Photo.gql("ORDER BY __key__").get()
         
-        if photo.favorited_count > 4:                            
+        if photo.favorited_count > 1:                            
+            photo.skill_levels = [1]
+        elif photo.favorited_count > 4:
             photo.skill_levels = [1,2]
         else:
-            photo.skill_levels = [1]  
+            photo.skill_levels = [0]  
         
         photo.put()
         

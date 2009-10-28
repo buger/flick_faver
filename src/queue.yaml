@@ -8,5 +8,5 @@ queue:
   bucket_size: 3
  
 - name: non-blocking
-  rate: 2/s
+  rate: 10/s
   bucket_size: 2

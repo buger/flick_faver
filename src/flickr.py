@@ -103,10 +103,11 @@ def get_user_info_by_url(url):
     
     return (userid, username)
 
-def get_contacts_faves(user_key, truncate, page):
+def get_contacts_faves(user_key, truncate, page):    
     #http://pipes.yahoo.com/pipes/pipe.run?_id=3417bb5ca134b3571f0b644c48bdc4fe&_render=json&truncate=1&user_key=agpmbGlja2ZhdmVychcLEgRVc2VyIg11MTM3NzkyMDZATjA4DA    
     url = "http://files.nixon-site.ru/buger/proxy.php?_id=%s&_render=json&truncate=%s&user_key=%s&page=%s" % (PIPE_ID, truncate, user_key, page)
     #url = "http://pipes.yahoo.com/pipes/pipe.run?_id=%s&_render=json&truncate=%s&user_key=%s&page=%s" % (PIPE_ID, truncate, user_key, page)
+    logging.debug("updating contacts by url: %s" % url)
     
     result = urlfetch.fetch(url)
     if result.status_code == 200:
