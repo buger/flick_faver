@@ -182,7 +182,14 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
         
         if len(items) != 0:
             page = page + 1
-            task = taskqueue.Task(url="/task/update_contacts_faves", 
+            	    
+	    if self.request.get('non-blocking'):
+		countdown = 0
+	    else:
+		countdown = 30
+
+	    task = taskqueue.Task(url="/task/update_contacts_faves", 
+				  countdown = countdown,
                                   params={'user_key': user_key,
                                           'page': page, 
                                           'non-blocking':self.request.get('non-blocking'), 

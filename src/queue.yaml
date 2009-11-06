@@ -1,12 +1,12 @@
 queue:
 - name: update-photos
   rate: 10/m
-  bucket_size: 2
+  bucket_size: 5
 
 - name: update-contacts
   rate: 2/s
   bucket_size: 3
  
 - name: non-blocking
-  rate: 10/s
+  rate: 3/s
   bucket_size: 2
