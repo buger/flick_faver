@@ -92,9 +92,9 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
 
         if self.request.get('last_contact_key'):
             contacts.filter('__key__ >', db.Key(self.request.get('last_contact_key')))
-	
-        contacts = contacts.fetch(3)	
-	
+
+        contacts = contacts.fetch(3)
+
         
         if self.request.get('travel-in-time'):
             last_photo = db.GqlQuery("SELECT * FROM Photo WHERE ANCESTOR IS :1 ORDER BY created_at", user).get()
@@ -194,7 +194,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
             else:
                 countdown = 60
     
-    	    task = taskqueue.Task(url="/task/update_contacts_faves", 
+            task = taskqueue.Task(url="/task/update_contacts_faves", 
                                   countdown = countdown,
                                   params={'user_key': user_key,
                                           'last_contact_key': contacts[-1].key(), 
@@ -212,7 +212,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
 class UpdateFavoritesCronHandler(webapp.RequestHandler):
     def get(self):
         users = db.GqlQuery("SELECT * FROM User WHERE updated_at < :1 AND processing_state = :2", 
-                            datetime.datetime.now()-datetime.timedelta(minutes=60), const.StateWaiting) 
+                            datetime.datetime.now()-datetime.timedelta(minutes=180), const.StateWaiting) 
         
         for user in users:            
             # If user is active in 24 hours, update every hour, else one at day
