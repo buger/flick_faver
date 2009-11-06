@@ -13,7 +13,6 @@ from models import *
 FLICKR_API_KEY = 'e5504def2a46e4a654ace751ab1cca88'
 FLICKR_SECRET = 'ff8a88e4c4dd7cec'
 FLICKR_SIG = '92de0d7a6e1e47839448060a372ceff1' # ff8a88e4c4dd7cecapi_keye5504def2a46e4a654ace751ab1cca88permsread
-PIPE_ID = '3417bb5ca134b3571f0b644c48bdc4fe'
 
 FLICKR_AUTH_URL = "http://flickr.com/services/auth/?api_key=%s&perms=read&api_sig=%s" % (FLICKR_API_KEY, FLICKR_SIG)
 
@@ -103,19 +102,9 @@ def get_user_info_by_url(url):
     
     return (userid, username)
 
-def get_contacts_faves(user_key, truncate, page):    
-    #http://pipes.yahoo.com/pipes/pipe.run?_id=3417bb5ca134b3571f0b644c48bdc4fe&_render=json&truncate=1&user_key=agpmbGlja2ZhdmVychcLEgRVc2VyIg11MTM3NzkyMDZATjA4DA    
-    url = "http://files.nixon-site.ru/buger/proxy.php?_id=%s&_render=json&truncate=%s&user_key=%s&page=%s" % (PIPE_ID, truncate, user_key, page)
-    #url = "http://pipes.yahoo.com/pipes/pipe.run?_id=%s&_render=json&truncate=%s&user_key=%s&page=%s" % (PIPE_ID, truncate, user_key, page)
-    logging.debug("updating contacts by url: %s" % url)
+def get_contact_faves(nsid, per_page):
+    photos_xml = call_method("flickr.favorites.getPublicList","user_id=%s&extras=url_s,url_m,url_sq,path_alias,owner_name&per_page=%s" % (nsid, per_page))
+
+    return photos_xml.getElementsByTagName('photo')
+
     
-    result = urlfetch.fetch(url)
-    if result.status_code == 200:
-        json_object = result.content
-        
-        photos = demjson.decode(json_object)['value']['items']
-        
-        return photos        
-    else:
-        logging.error("Error while updating contacts faves, user_key: %s" % user_key)
-        raise StandardError, "Error while updating contacts faves"        

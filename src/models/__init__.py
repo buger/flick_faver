@@ -24,9 +24,7 @@ class User(db.Model):
     processing_state = db.IntegerProperty(choices=set([const.StateProcessing, const.StateWaiting]))      
           
 
-class Photo(db.Model):        
-    photo_type = db.IntegerProperty()
-    
+class Photo(db.Expando):        
     photo_id = db.IntegerProperty(required = True)
     uri      = db.LinkProperty()
     title    = db.StringProperty() 
@@ -41,9 +39,9 @@ class Photo(db.Model):
     author     = db.StringProperty()
     author_uri = db.LinkProperty()
     
-    skill_levels = db.ListProperty(int)
+    skill_level  = db.IntegerProperty(default = 0) # Favorited more the 1 contact    
     
-    published_at = db.DateTimeProperty()
+    #published_at = db.DateTimeProperty()
     created_at   = db.DateTimeProperty()
     updated_at   = db.DateTimeProperty(auto_now = True)       
 

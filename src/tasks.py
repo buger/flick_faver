@@ -77,28 +77,24 @@ class UpdateContactsHandler(webapp.RequestHandler):
 
 class UpdateContactsFavesHandler(webapp.RequestHandler):
     def get(self):
-        user_key = self.request.get('user_key')
-        
         if self.request.get('photos-per-contact'):
             PHOTOS_PER_CONTACT = int(self.request.get('photos-per-contact'))
         else:
             PHOTOS_PER_CONTACT = 20
-        
-        user = User.get(user_key)
+
+        user_key = self.request.get('user_key')            
+        user = User.get(user_key)        
                 
-        page = self.request.get('page')
-        
-        try:
-            page = int(page)
-        except ValueError:
-            page = 1
-                        
-        photos = []
-        
-        items = flickr.get_contacts_faves(user_key = user_key,
-                                          truncate = PHOTOS_PER_CONTACT,
-                                          page = page)
-        
+        # Getting contacts
+        contacts = Contact.all()
+        contacts.order('__key__')
+        contacts.ancestor(user) 
+
+        if self.request.get('last_contact_key'):
+            contacts.filter('__key__ >', db.Key(self.request.get('last_contact_key')))
+	
+        contacts = contacts.fetch(3)	
+	
         
         if self.request.get('travel-in-time'):
             last_photo = db.GqlQuery("SELECT * FROM Photo WHERE ANCESTOR IS :1 ORDER BY created_at", user).get()
@@ -108,47 +104,53 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
             else:
                 start_from_time = datetime.datetime.now()
         else:
-            start_from_time = 0
-                        
-        # in groups of PHOTOS_PER_CONTACT, each group will have photos from one contact 
-        contact_groups = itertools.izip(*[itertools.islice(items, i, None, PHOTOS_PER_CONTACT) for i in range(PHOTOS_PER_CONTACT)])
-        
-        counter = 1
-        
-        for group in contact_groups:
-            favorited_by = str(db.Key.from_path("User","u%s" % user.userid, "Contact","c%s" % group[0]['favorited_by']))
+            start_from_time = 0                        
+
+        photos = []
+        counter = 0
+            
+        for contact in contacts:
+            photos_xml = flickr.get_contact_faves(contact.userid, PHOTOS_PER_CONTACT)
                                     
-            for item in group:
-                photo_key_name = "p%s" % item['image_id']
+            for p_xml in photos_xml:
+                photo_key_name = "p%s" % p_xml.getAttribute('id')
                 
                 try:
                     photo = Photo.get_by_key_name(photo_key_name, user)
                 except:
                     continue
-                
-                        
+                                        
                 if photo is None:            
-                    published_date = datetime.datetime(*time.strptime(item['published'], "%Y-%m-%dT%H:%M:%SZ")[:6])                                                                
+                    user_path = p_xml.getAttribute('pathalias')
+                    if len(user_path) == 0:
+                        user_path = p_xml.getAttribute("owner")
+                    
+                    
+                    logging.debug("url_m:"+p_xml.getAttribute('url_m'))
+                    logging.debug("url_sq:"+p_xml.getAttribute('url_sq'))
+                    logging.debug("url_s:"+p_xml.getAttribute('url_s'))
+                    
+                    url_m = p_xml.getAttribute('url_m')
+                    if len(url_m) == 0:
+                        url_m = p_xml.getAttribute('url_s') 
                     
                     photo = Photo(key_name = photo_key_name,
                                   parent   = user,
-                                  photo_id = int(item['image_id']),                              
-                                  uri      = item['link'],
-                                  title    = item['title'],
+                                  photo_id = int(p_xml.getAttribute('id')),                              
+                                  uri      = ("http://www.flickr.com/photos/%s/%s" % (user_path, p_xml.getAttribute('id'))),
+                                  title    = p_xml.getAttribute('title'),
                                   
                                   phtoto_type = const.PhotoTypeFavorite,
                                   
-                                  image_url   = item['image_url'],
-                                  image_s_url = item['image_s_url'],
-                                  image_m_url = item['image_m_url'],
+                                  image_url   = url_m,
+                                  image_s_url = p_xml.getAttribute('url_sq'),
+                                  image_m_url = p_xml.getAttribute('url_s'),
                                   
-                                  favorited_by    = [favorited_by],                              
+                                  favorited_by    = [str(contact.key())],                              
                                   favorited_count = 1,
                                   
-                                  author     = item['author']['name'],
-                                  author_uri = item['author']['uri'],
-                                  
-                                  published = published_date                                                        
+                                  author     = p_xml.getAttribute('ownername'),
+                                  author_uri = ("http://www.flickr.com/photos/%s" % user_path)                                                        
                                   )
                     
                     if self.request.get('travel-in-time'):
@@ -161,47 +163,23 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                     counter += 1               
                 else:                
                     try:                    
-                        photo.favorited_by.index(favorited_by)
+                        photo.favorited_by.index(str(contact.key()))
                         
                         logging.debug("breaking!:)")
                         break #go back to parent cycle, all next photos already in database                                    
                     except ValueError:                    
-                        photo.favorited_by.append(favorited_by)
+                        photo.favorited_by.append(str(contact.key()))
                         photo.favorited_count += 1  
                         
-                        if photo.favorited_count > 4:                            
-                            photo.skill_levels = [1,2]
-                        else:
-                            photo.skill_levels = [1]    
-                                                           
-                        photos.append(photo)   
-            
+                        if photo.favorited_count == 2:
+                            photo.skill_level = 1                                                                                                                   
+                            photos.append(photo)   
+                    
         logging.debug("New photos: %s" % len(photos))
-        
+                
         db.put(photos)
-        
-        if len(items) != 0:
-            page = page + 1
-            	    
-	    if self.request.get('non-blocking'):
-		countdown = 0
-	    else:
-		countdown = 30
-
-	    task = taskqueue.Task(url="/task/update_contacts_faves", 
-				  countdown = countdown,
-                                  params={'user_key': user_key,
-                                          'page': page, 
-                                          'non-blocking':self.request.get('non-blocking'), 
-                                          'travel-in-time': self.request.get('travel-in-time'),
-                                          'photos-per-contact': self.request.get('photos-per-contact')}, 
-                                  method = 'GET')
-            
-            if self.request.get('non-blocking'):
-                task.add("non-blocking")
-            else:
-                task.add("update-photos")
-        else:
+                
+        if len(contacts) < 3:        
             user.updated_at = datetime.datetime.now()
             user.processing_state = const.StateWaiting
             # We don't want to restart all queue, if user.put gives some errors
@@ -209,6 +187,26 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                 user.put()
             except:
                 user.put()
+                            
+        else:
+            if self.request.get('non-blocking'):
+                countdown = 0
+            else:
+                countdown = 60
+    
+    	    task = taskqueue.Task(url="/task/update_contacts_faves", 
+                                  countdown = countdown,
+                                  params={'user_key': user_key,
+                                          'last_contact_key': contacts[-1].key(), 
+                                          'non-blocking':self.request.get('non-blocking'), 
+                                          'travel-in-time': self.request.get('travel-in-time'),
+                                          'photos-per-contact': self.request.get('photos-per-contact')}, 
+                                  method = 'GET')
+                
+            if self.request.get('non-blocking'):
+                task.add("non-blocking")
+            else:
+                task.add("update-photos")
                 
 
 class UpdateFavoritesCronHandler(webapp.RequestHandler):
@@ -231,21 +229,7 @@ class UpdateContactsCronHandler(webapp.RequestHandler):
         user_keys = db.GqlQuery("SELECT __key__ FROM User")
         
         for key in user_keys:
-            taskqueue.Task(url="/task/update_contacts", params={"user_key":key}, method = 'GET').add("update-contacts")                                       
-            
-            
-              
-class ClearDatabaseHandler(webapp.RequestHandler):
-    def get(self):
-        #items_for_delete = User.all().fetch(100)
-        #if len(items_for_delete) == 0:
-        #    items_for_delete = Contact.all().fetch(100)
-        #    if len(items_for_delete) == 0:
-        items_for_delete = Photo.all().fetch(100)    
-        
-        if len(items_for_delete) != 0:
-            db.delete(items_for_delete)            
-            taskqueue.Task(url="/task/clear_database", method = 'GET').add("non-blocking")
+            taskqueue.Task(url="/task/update_contacts", params={"user_key":key}, method = 'GET').add("update-contacts")                                                   
 
 
 class UserUpdateProcessingStateHandler(webapp.RequestHandler):
@@ -265,13 +249,26 @@ class UpdateSkillLevelHandler(webapp.RequestHandler):
             photo = Photo.gql("WHERE __key__ > :1 ORDER BY __key__", db.Key(photo_key)).get()
         else:
             photo = Photo.gql("ORDER BY __key__").get()
+                
+        try:
+            del photo.skill_levels
+        except:
+            pass
+        
+        try:    
+            del photo.published_at
+        except:
+            pass
+        
+        try:            
+            del photo.photo_type
+        except:
+            pass
         
         if photo.favorited_count > 1:                            
-            photo.skill_levels = [1]
-        elif photo.favorited_count > 4:
-            photo.skill_levels = [1,2]
+            photo.skill_level = 1            
         else:
-            photo.skill_levels = [0]  
+            photo.skill_level = 0
         
         photo.put()
         
@@ -281,7 +278,6 @@ class UpdateSkillLevelHandler(webapp.RequestHandler):
 application = webapp.WSGIApplication([
    ('/task/update_contacts', UpdateContactsHandler),
    ('/task/update_contacts_faves', UpdateContactsFavesHandler),
-   ('/task/clear_database', ClearDatabaseHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateContactsCronHandler),
    ('/task/update_skill_level', UpdateSkillLevelHandler),
