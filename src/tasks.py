@@ -120,7 +120,10 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                 except:
                     continue
                                         
-                if photo is None:            
+                if photo is None:
+                    if len(p_xml.getAttribute('id')) == 0:
+                      continue
+
                     user_path = p_xml.getAttribute('pathalias')
                     if len(user_path) == 0:
                         user_path = p_xml.getAttribute("owner")
