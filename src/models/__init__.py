@@ -1,4 +1,5 @@
 import const
+import hashlib
 from google.appengine.ext import db
 
 # For templates, using in tag clouds
@@ -57,3 +58,16 @@ class Contact(db.Model):
     state          = db.IntegerProperty(choices=set([const.UserStateRegistred, const.UserStateUnRegistred]))
     
     created_at  = db.DateTimeProperty(auto_now_add = True)
+    
+class RSSFeed(db.Model):
+    last_photo = db.StringProperty()
+    content = db.TextProperty()
+    updated_at = db.DateTimeProperty(auto_now = True)
+    
+    @property
+    def etag(self):
+        return hashlib.sha1(db.model_to_protobuf(self).Encode()).hexdigest()
+    
+class FeedPost(db.Model):        
+    content = db.TextProperty()
+    created_at = db.DateTimeProperty(auto_now = True)    

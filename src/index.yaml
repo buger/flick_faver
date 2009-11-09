@@ -10,8 +10,20 @@ indexes:
   properties:
   - name: created_at
 
+- kind: Photo
+  ancestor: yes
+  properties:
+  - name: skill_level
+  - name: created_at
+    direction: desc
+
 - kind: User
   properties:
   - name: processing_state
   - name: updated_at
     
+- kind: FeedPost
+  ancestor: yes
+  properties:
+  - name: created_at
+    direction: desc

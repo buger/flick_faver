@@ -8,3 +8,8 @@ cron:
   url: /task/update_contacts_cron
   schedule: every 24 hours
   timezone: Europe/Moscow
+  
+- description: Update rss
+  url: /task/update_rss_cron
+  schedule: every 6 hours
+  timezone: Europe/Moscow

@@ -5,15 +5,17 @@ import itertools
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.ext.webapp import template
 from google.appengine.api.labs import taskqueue
 from google.appengine.ext import db
+
 
 import flickr
 from models import *
 
 class UpdateContactsHandler(webapp.RequestHandler):
     def get(self):
-        CONTACTS_PER_PAGE = 50
+        CONTACTS_PER_PAGE = 20
         
         user_key = self.request.get('user_key')
         
@@ -129,10 +131,6 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                         user_path = p_xml.getAttribute("owner")
                     
                     
-                    logging.debug("url_m:"+p_xml.getAttribute('url_m'))
-                    logging.debug("url_sq:"+p_xml.getAttribute('url_sq'))
-                    logging.debug("url_s:"+p_xml.getAttribute('url_s'))
-                    
                     url_m = p_xml.getAttribute('url_m')
                     if len(url_m) == 0:
                         url_m = p_xml.getAttribute('url_s') 
@@ -142,8 +140,6 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                                   photo_id = int(p_xml.getAttribute('id')),                              
                                   uri      = ("http://www.flickr.com/photos/%s/%s" % (user_path, p_xml.getAttribute('id'))),
                                   title    = p_xml.getAttribute('title'),
-                                  
-                                  phtoto_type = const.PhotoTypeFavorite,
                                   
                                   image_url   = url_m,
                                   image_s_url = p_xml.getAttribute('url_sq'),
@@ -190,7 +186,9 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                 user.put()
             except:
                 user.put()
-                            
+                          
+            if self.request.get('non-blocking'):
+                taskqueue.Task(url="/task/update_rss", params={"user":str(user.key())}, method = 'GET').add("update-rss")                            
         else:
             if self.request.get('non-blocking'):
                 countdown = 0
@@ -276,7 +274,70 @@ class UpdateSkillLevelHandler(webapp.RequestHandler):
         photo.put()
         
         taskqueue.Task(url="/task/update_skill_level", params={"key":photo.key()}, method = 'GET').add("non-blocking")
+
+
+class UpdateRSSCronHandler(webapp.RequestHandler):
+    def get(self):
+        users = db.GqlQuery("SELECT __key__ FROM User")
+        
+        for key in users:
+            taskqueue.Task(url="/task/update_rss", params={"user":key}, method = 'GET').add("update-rss")
+
+class UpdateRSSHandler(webapp.RequestHandler):
+    def group(self, lst, n):
+      for i in range(0, len(lst), n):
+        val = lst[i:i+n]
+        if len(val) == n:
+          yield tuple(val)    
     
+    def get(self):
+        user = User.get(db.Key(self.request.get('user')))
+        
+        feed = RSSFeed.get_or_insert("r%s" % user.userid)
+            
+        photos = Photo.all()
+        photos.ancestor(user)
+        
+        if feed.last_photo:
+            photos.order("created_at")            
+            last_photo = Photo.get(db.Key(feed.last_photo))
+            
+            photos.filter("created_at >" ,last_photo.created_at)
+        else:
+            photos.order("-created_at")                    
+
+        photos = photos.fetch(90)
+    
+        if feed.last_photo:
+            photos.reverse()        
+     
+        posts = []
+        
+        if len(photos) > 5:
+            # in groups of 30
+            groups_of_30 = [itertools.islice(photos, i*30, (i+1)*30, 1) for i in range(3)]
+            
+            for group in groups_of_30:
+                group = list(group)
+                                            
+                if len(group) != 0:
+                    groups_of_3 = [itertools.islice(group, i*3, (i+1)*3, 1) for i in range(10)]                    
+                    
+                    content = template.render("templates/_rss_post.html", {'groups_of_3':groups_of_3})
+                    content = unicode(content, 'utf-8', errors='ignore')
+                                    
+                    post = FeedPost(parent = feed, content=content)
+                    posts.append(post)                                  
+          
+            feed.last_photo = str(photos[0].key())
+            feed.put()
+            
+            if feed.last_photo and len(photos) == 90:
+                taskqueue.Task(url="/task/update_rss", params={"user":self.request.get('user')}, method = 'GET').add("update-rss")
+            
+        posts.reverse()
+        
+        db.put(posts)
 
 application = webapp.WSGIApplication([
    ('/task/update_contacts', UpdateContactsHandler),
@@ -284,7 +345,9 @@ application = webapp.WSGIApplication([
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateContactsCronHandler),
    ('/task/update_skill_level', UpdateSkillLevelHandler),
-   ('/task/update_processing_state', UserUpdateProcessingStateHandler)   
+   ('/task/update_processing_state', UserUpdateProcessingStateHandler),
+   ('/task/update_rss', UpdateRSSHandler),
+   ('/task/update_rss_cron', UpdateRSSCronHandler)   
    ], debug=True)
                 
 def main():

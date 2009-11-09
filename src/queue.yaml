@@ -4,9 +4,13 @@ queue:
   bucket_size: 5
 
 - name: update-contacts
-  rate: 2/s
+  rate: 10/m
   bucket_size: 3
  
 - name: non-blocking
-  rate: 3/s
+  rate: 1/s
+  bucket_size: 2
+
+- name: update-rss
+  rate: 30/m
   bucket_size: 2

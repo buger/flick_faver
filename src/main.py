@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import itertools
+import urllib
 
 import const
 
@@ -40,6 +41,7 @@ def doRender(handler, tname='index.html', values={}, options = {}):
     
     try:
         newval['username'] = handler.session['username']
+        newval['userid'] = handler.session['userid']
         newval['fullname'] = handler.session['username']
         newval['auth_token'] = handler.session['auth_token']        
     except KeyError:
@@ -77,9 +79,9 @@ def get_photos(page, start_from = None):
         photos = Photo.gql("WHERE ANCESTOR IS :1 ORDER BY created_at DESC", current_user).fetch(PHOTOS_PER_LOAD, offset)
                         
     # in groups of 3
-    photos_groups = itertools.izip(*[itertools.islice(photos, i, None, 3) for i in range(3)])
+    photos_groups = [itertools.islice(photos, i*3, (i+1)*3, 1) for i in range(PHOTOS_PER_LOAD/3)]          
     
-    return (photos_groups, start_from_photo)
+    return (photos_groups, start_from_photo, photos[0].created_at)
         
  
 class MainHandler(webapp.RequestHandler):
@@ -92,16 +94,19 @@ class LoadPhotosHandler(webapp.RequestHandler):
         photo_key = self.request.get("last_photo_id")        
         
         try:
-            photos_groups, last_photo = get_photos(page = page, start_from = photo_key)
+            photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key)
         except KeyError:                    
             photos_groups = []
             last_photo = None
+            first_date = None
             
-        first_date = None
-        for group in photos_groups:
-            first_date = group[0].created_at
-            break        
-         
+        
+        #for group in photos_groups:
+        #    first_date = group[0].created_at
+        #    break        
+        
+        #raise StandardError, group[0]
+        
         doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
               
 
@@ -168,12 +173,59 @@ class LogoutHandler(webapp.RequestHandler):
         self.redirect("/")        
         
  
+class RSSHandler(webapp.RequestHandler):                 
+    def get(self, userid):        
+        HTTP_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
+        
+        userid = urllib.unquote_plus(urllib.unquote(userid))
+        
+        user = User.get_by_key_name("u%s" % userid)
+        
+        if user is None:
+            self.error(404)
+        else:   
+            feed = RSSFeed.get_or_insert("r%s" % user.userid)
+            
+            serve = True
+            
+            if 'If-Modified-Since' in self.request.headers:
+              last_seen = datetime.datetime.strptime(
+                  self.request.headers['If-Modified-Since'],
+                  HTTP_DATE_FMT)
+              if last_seen >= feed.updated_at.replace(microsecond=0):
+                serve = False
+                
+            if 'If-None-Match' in self.request.headers:
+              etags = [x.strip('" ')
+                       for x in self.request.headers['If-None-Match'].split(',')]
+              if feed.etag in etags:
+                serve = False
+                
+            self.response.headers['Content-Type'] = 'application/atom+xml; charset=utf-8'
+                    
+            last_modified = feed.updated_at.strftime(HTTP_DATE_FMT)
+            
+            self.response.headers['Last-Modified'] = last_modified
+            self.response.headers['ETag'] = '"%s"' % feed.etag
+                            
+            posts = FeedPost.all().ancestor(feed).order("-created_at").fetch(5)
+            
+            feed_content = template.render("templates/atom.xml", {'user':user, 'posts':posts})
+    
+            if serve:
+              self.response.out.write(feed_content)
+            else:
+              self.response.set_status(304)        
+            
+            
+ 
 application = webapp.WSGIApplication([
    ('/', MainHandler),
    ('/photos/([^\/]*)', LoadPhotosHandler),
    ('/login', LoginHandler),
    ('/logout', LogoutHandler),
-   ('/auth_callback', AuthCallbackHandler)
+   ('/auth_callback', AuthCallbackHandler),
+   ('/feed/([^\/]*)', RSSHandler)
    ], debug=True)
                 
 def main():

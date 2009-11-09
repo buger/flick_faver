@@ -10,7 +10,7 @@
 {% if forloop.first and first_date %}
 <tr>
 {% else %}
-<tr {% if forloop.counter0|divisibleby:2  %}class="group_start"{% endif %}>
+<tr {% if forloop.counter0|divisibleby:2 %}class="group_start"{% endif %}>
 {% endif %}
 
   {% for photo in photo_group %}

@@ -1,0 +1,17 @@
+<p>Check your profile on <a href="http://www.flickfaver.com">FlickFaver</a></p>
+<table cellpadding="0" cellspacing="0">
+  {% for group in groups_of_3 %}  
+  <tr>
+    {% for photo in group %}
+    <td valign="top" class="photo" align="left" style="padding: 5px; padding-bottom: 10px">
+      <div class="title"><a href="{{photo.author_uri}}" target="_blank">{{photo.author}}</a></div>
+      <div>              
+        <a href="{{photo.uri}}" target="_blank">
+          <img src="{{photo.image_m_url}}"/>
+        </a> 
+      </div>        
+    </td> 
+    {% endfor %} 
+  </tr>
+  {% endfor %}  
+</table>
