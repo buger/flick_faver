@@ -1,5 +1,5 @@
 {% for photo in photos %}
 <div class="photo">
-  <img src="{{photo.image_url}}"/> 
+  <a href="{{photo.uri}}" target="_blank"><img src="{{photo.image_url}}"/></a> 
 </div>
 {% endfor %}
