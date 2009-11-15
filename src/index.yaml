@@ -17,6 +17,12 @@ indexes:
   - name: created_at
     direction: desc
 
+- kind: Photo
+  properties:
+  - name: skill_level
+  - name: created_at
+    direction: desc
+
 - kind: User
   properties:
   - name: processing_state
