@@ -123,43 +123,46 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
                     continue
                                         
                 if photo is None:
-                    if len(p_xml.getAttribute('id')) == 0:
-                      continue
-
-                    user_path = p_xml.getAttribute('pathalias')
-                    if len(user_path) == 0:
-                        user_path = p_xml.getAttribute("owner")
-                    
-                    
-                    url_m = p_xml.getAttribute('url_m')
-                    if len(url_m) == 0:
-                        url_m = p_xml.getAttribute('url_s') 
-                    
-                    photo = Photo(key_name = photo_key_name,
-                                  parent   = user,
-                                  photo_id = int(p_xml.getAttribute('id')),                              
-                                  uri      = ("http://www.flickr.com/photos/%s/%s" % (user_path, p_xml.getAttribute('id'))),
-                                  title    = p_xml.getAttribute('title'),
-                                  
-                                  image_url   = url_m,
-                                  image_s_url = p_xml.getAttribute('url_sq'),
-                                  image_m_url = p_xml.getAttribute('url_s'),
-                                  
-                                  favorited_by    = [str(contact.key())],                              
-                                  favorited_count = 1,
-                                  
-                                  author     = p_xml.getAttribute('ownername'),
-                                  author_uri = ("http://www.flickr.com/photos/%s" % user_path)                                                        
-                                  )
-                    
-                    if self.request.get('travel-in-time'):
-                        photo.created_at = start_from_time - datetime.timedelta(microseconds=(10*counter))
-                    else:
-                        photo.created_at = datetime.datetime.now()
-                    
-                    photos.append(photo) 
-                    
-                    counter += 1               
+                    try:
+                        if len(p_xml.getAttribute('id')) == 0:
+                          continue
+    
+                        user_path = p_xml.getAttribute('pathalias')
+                        if len(user_path) == 0:
+                            user_path = p_xml.getAttribute("owner")
+                        
+                        
+                        url_m = p_xml.getAttribute('url_m')
+                        if len(url_m) == 0:
+                            url_m = p_xml.getAttribute('url_s') 
+                        
+                        photo = Photo(key_name = photo_key_name,
+                                      parent   = user,
+                                      photo_id = int(p_xml.getAttribute('id')),                              
+                                      uri      = ("http://www.flickr.com/photos/%s/%s" % (user_path, p_xml.getAttribute('id'))),
+                                      title    = p_xml.getAttribute('title'),
+                                      
+                                      image_url   = url_m,
+                                      image_s_url = p_xml.getAttribute('url_sq'),
+                                      image_m_url = p_xml.getAttribute('url_s'),
+                                      
+                                      favorited_by    = [str(contact.key())],                              
+                                      favorited_count = 1,
+                                      
+                                      author     = p_xml.getAttribute('ownername'),
+                                      author_uri = ("http://www.flickr.com/photos/%s" % user_path)                                                        
+                                      )
+                        
+                        if self.request.get('travel-in-time'):
+                            photo.created_at = start_from_time - datetime.timedelta(microseconds=(10*counter))
+                        else:
+                            photo.created_at = datetime.datetime.now()
+                        
+                        photos.append(photo) 
+                        
+                        counter += 1               
+                    except:
+                        logging.error("Error while creating photo: %s" % photo_key_name)
                 else:                
                     try:                    
                         photo.favorited_by.index(str(contact.key()))
