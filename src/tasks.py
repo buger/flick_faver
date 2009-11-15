@@ -240,40 +240,7 @@ class UserUpdateProcessingStateHandler(webapp.RequestHandler):
         for user in users:
             user.processing_state = const.StateWaiting
         
-        db.put(users)
-        
-class UpdateSkillLevelHandler(webapp.RequestHandler):
-    def get(self):
-        photo_key = self.request.get('key')
-        
-        if photo_key:
-            photo = Photo.gql("WHERE __key__ > :1 ORDER BY __key__", db.Key(photo_key)).get()
-        else:
-            photo = Photo.gql("ORDER BY __key__").get()
-                
-        try:
-            del photo.skill_levels
-        except:
-            pass
-        
-        try:    
-            del photo.published_at
-        except:
-            pass
-        
-        try:            
-            del photo.photo_type
-        except:
-            pass
-        
-        if photo.favorited_count > 1:                            
-            photo.skill_level = 1            
-        else:
-            photo.skill_level = 0
-        
-        photo.put()
-        
-        taskqueue.Task(url="/task/update_skill_level", params={"key":photo.key()}, method = 'GET').add("non-blocking")
+        db.put(users)        
 
 
 class UpdateRSSCronHandler(webapp.RequestHandler):
@@ -283,13 +250,8 @@ class UpdateRSSCronHandler(webapp.RequestHandler):
         for key in users:
             taskqueue.Task(url="/task/update_rss", params={"user":key}, method = 'GET').add("update-rss")
 
-class UpdateRSSHandler(webapp.RequestHandler):
-    def group(self, lst, n):
-      for i in range(0, len(lst), n):
-        val = lst[i:i+n]
-        if len(val) == n:
-          yield tuple(val)    
-    
+
+class UpdateRSSHandler(webapp.RequestHandler):       
     def get(self):
         user = User.get(db.Key(self.request.get('user')))
         
@@ -344,7 +306,6 @@ application = webapp.WSGIApplication([
    ('/task/update_contacts_faves', UpdateContactsFavesHandler),
    ('/task/update_favorites_cron', UpdateFavoritesCronHandler),
    ('/task/update_contacts_cron', UpdateContactsCronHandler),
-   ('/task/update_skill_level', UpdateSkillLevelHandler),
    ('/task/update_processing_state', UserUpdateProcessingStateHandler),
    ('/task/update_rss', UpdateRSSHandler),
    ('/task/update_rss_cron', UpdateRSSCronHandler)   
