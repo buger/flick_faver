@@ -87,16 +87,17 @@ def get_photos(page, start_from = None):
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        try:
-            photos = memcache.get('photos_for_mainpage')
-            
-            if photos is None:                                
-                photos = Photo.all().filter('skill_level =', 0).order("-created_at").fetch(10)
-                memcache.add('photos_for_mainpage', photos, 60)
-        except:
-            photos = None
-                
+        photos = Photo.all().filter('skill_level =', 1).order("-created_at")
         
+        try:
+            photos = photos.fetch(10)
+        except:
+            try:
+                photos = photos.fetch(10)
+            except:
+                photos = []
+        
+                        
         doRender(self, "index.html", {'photos':photos})
         
 class LoadPhotosHandler(webapp.RequestHandler):
@@ -116,7 +117,7 @@ class LoadPhotosHandler(webapp.RequestHandler):
                     
             doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
         elif page_type == 'main_big':
-            photos = Photo.all().filter("skill_level =", 0).order("-created_at")
+            photos = Photo.all().filter("skill_level =", 1).order("-created_at")
             photos = photos.fetch(10, 10*(page-1))
             
             doRender(self, "_photos_big.html", {'photos': photos})
