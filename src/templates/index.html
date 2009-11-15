@@ -31,13 +31,14 @@
           {% endif %}
           
           {% if photos %}
-          <div class="photos_big">                      
+          <div class="photos_big" id="photos_container">                      
             {% for photo in photos %}
             <div class="photo">
               <img src="{{photo.image_url}}"/> 
             </div>
             {% endfor %}  
           </div>         
+          <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>         
           {% endif %} 
         </div>
       </div>
@@ -55,7 +56,7 @@
       <div class="photos">
         <table id="photos_table">
         </table>
-        <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>
+        <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div><
       </div>  
     </div>
      

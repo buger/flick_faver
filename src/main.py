@@ -100,26 +100,28 @@ class MainHandler(webapp.RequestHandler):
         doRender(self, "index.html", {'photos':photos})
         
 class LoadPhotosHandler(webapp.RequestHandler):
-    def post(self, page):        
+    def post(self, page):
+        page_type = self.request.get('page_type')                                
         page = int(page)
         photo_key = self.request.get("last_photo_id")        
         
-        try:
-            photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key)
-        except KeyError:                    
-            photos_groups = []
-            last_photo = None
-            first_date = None
+        if page_type == 'simple':
+            try:
+                photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key)
+            except KeyError:                    
+                photos_groups = []
+                last_photo = None
+                first_date = None
+                
+                    
+            doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
+        elif page_type == 'main_big':
+            photos = Photo.all().filter("skill_level =", 0).order("-created_at")
+            photos = photos.fetch(10, 10*(page-1))
             
-        
-        #for group in photos_groups:
-        #    first_date = group[0].created_at
-        #    break        
-        
-        #raise StandardError, group[0]
-        
-        doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
-              
+            doRender(self, "_photos_big.html", {'photos': photos})
+        else:
+            self.error(404)   
 
 class LoginHandler(webapp.RequestHandler):
     def get(self):               
