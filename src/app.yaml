@@ -17,13 +17,13 @@ handlers:
   login: admin
 
 - url: /images
-  static_dir: images
+  static_dir: media/images
 
 - url: /stylesheets
-  static_dir: stylesheets
+  static_dir: media/stylesheets
 
 - url: /javascripts
-  static_dir: javascripts
+  static_dir: media/javascripts
 
 - url: /api/.*
   script: api.py

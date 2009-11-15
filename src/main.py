@@ -8,6 +8,7 @@ import const
 
 from google.appengine.api import users
 from google.appengine.ext import webapp
+from google.appengine.api import memcache
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api.labs import taskqueue
@@ -86,7 +87,17 @@ def get_photos(page, start_from = None):
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        doRender(self, "index.html")
+        try:
+            photos = memcache.get('photos_for_mainpage')
+            
+            if photos is None:                                
+                photos = Photo.all().filter('skill_level =', 0).order("-created_at").fetch(10)
+                memcache.add('photos_for_mainpage', photos, 60)
+        except:
+            photos = None
+                
+        
+        doRender(self, "index.html", {'photos':photos})
         
 class LoadPhotosHandler(webapp.RequestHandler):
     def post(self, page):        

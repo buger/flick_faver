@@ -1,0 +1,163 @@
+* {
+	border: 0px;
+}
+
+body {
+	text-align: center;
+	height: 100%;
+	font-family: verdana;
+}
+
+div#container {
+	margin-left: auto;
+	margin-right: auto;
+	width: 60em;
+	text-align: left;
+}
+
+a.login_link {
+	padding: 20px;
+	border: 1px solid #ccc;
+	background: #C3D9FF;
+	font-size: 3em;
+	color: #333;
+	border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+}
+
+div#inner h1 {
+	color: #999;
+	font-size: 3em;
+	font-family: Verdana;
+}
+
+div#inner .slogan {
+	font-size: 2.5em;
+	color: #666;
+	margin-bottom: 50px;
+}
+
+div.header {
+	background: #C3D9FF;
+	height: 50px;
+	font-size: 2em;
+	padding-top: 10px;
+	text-align: left;
+	padding-left: 20px;
+}
+
+div.header span {
+	margin-left: 50px;
+}
+
+div.header #rss_icon {
+	position: absolute;
+	left: 10px;
+	top: 5px;
+}
+
+div.header .slogan {
+	color: #888;
+	font-size: 1em;
+	margin-left: 30px;
+}
+
+a#blog_link {
+	position: absolute;
+	right: 20px;
+	top: 70px;
+	font-size: 2em;
+	font-family: verdana;
+	color: #36393D;
+	text-decoration: none;
+}
+
+a#blog_link:hover {
+	text-decoration: underline;
+}
+
+div.photos_big {
+	margin-top: 50px;
+}
+
+div.photos_big .photo {
+	margin-top: 30px;
+}
+
+div.photos .time_header td {
+	padding-top: 3em;
+	color: #999;
+	padding-bottom: 0.8em;
+}
+
+div.photos .group_start td {
+	padding-top: 3em;
+}
+
+div.photos td.photo {
+	padding-left: 2em;
+	padding-bottom: 2em;
+}
+
+div.photos .photo .title {
+	padding-bottom: 2px;
+	font-size: 0.8em;
+	text-align: left;
+}
+
+div.photos .photo .title a {
+	color: #333;
+}
+
+div.photos .photo .author {
+	padding-top: 2px;
+	font-size: 0.8em;
+}
+
+div#loader {
+	font-size: 2em;
+	color: #ccc;
+	text-align: center;
+	margin-top: 20px;
+	margin-bottom: 50px;
+	padding: 5px;
+}
+
+div#loader span {
+	background: url(/images/ajax-loader.gif) center left no-repeat;
+	padding-left: 55px;
+}
+
+a#twitter {
+	position: absolute;
+	top: 5px;
+	right: 10px;
+}
+
+/* Login page */
+#outer {
+	height: 500px;
+	position: relative;
+	width: 100%;
+}
+
+#middle {
+	top: 50%;
+	width: 100%;
+	left: 0px;
+	text-align: center;
+}  /* for explorer only*/
+
+#inner {
+	position: relative;
+	text-align: center;
+	padding-top: 50px
+}  /* for explorer only */
+
+#inner {
+	width: 52em;
+	margin-left: auto;
+	margin-right: auto; //
+	padding-bottom: 40px;
+} /* for all browsers*/
