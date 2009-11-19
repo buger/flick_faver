@@ -87,7 +87,7 @@ def get_photos(page, start_from = None):
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        photos = Photo.all().filter('skill_level =', 0).order("-created_at")
+        photos = Photo.all().filter('skill_level =', 1).order("-created_at")
         
         try:
             photos = photos.fetch(10)
