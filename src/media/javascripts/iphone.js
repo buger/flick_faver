@@ -40,13 +40,13 @@ var iPhoneStyle = function(selector_or_elems, options) {
     if (elem.checked) {
       handle.setStyle({ left: rightside + 'px' });
       onlabel.setStyle({ width: rightside + 4 + 'px' });
-      offspan.setStyle({ 'marginRight': rightside + 'px' });
+      offspan.setStyle({ 'marginRight': rightside + 'px' });            
     } else {
       handle.setStyle({ left: 0 });
       onlabel.setStyle({ width: 0 });
       onspan.setStyle({ 'marginLeft': -rightside + 'px' });
     }    
-
+    
     elem.change = function() {
       var is_onstate = elem.checked;
       var p = handle.positionedOffset().first() / rightside;
@@ -56,7 +56,10 @@ var iPhoneStyle = function(selector_or_elems, options) {
         offspan.setStyle({ 'marginRight': -p * rightside + 'px' });
         onspan.setStyle({ 'marginLeft': -(1 - p) * rightside + 'px' });
       });
+      
+      document.fire('difficulty:changed', elem.checked)      
     };
+    
     elem.observe('change', elem.change);
     
     var down = function(e) {

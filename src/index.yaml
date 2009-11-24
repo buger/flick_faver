@@ -16,11 +16,24 @@ indexes:
   - name: skill_level
   - name: created_at
     direction: desc
+    
+- kind: Photo
+  ancestor: yes
+  properties:
+  - name: skill_level
+  - name: updated_at
+    direction: desc    
 
 - kind: Photo
   properties:
   - name: skill_level
   - name: created_at
+    direction: desc
+
+- kind: Photo
+  properties:
+  - name: skill_level
+  - name: updated_at
     direction: desc
 
 - kind: User

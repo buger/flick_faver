@@ -38,23 +38,52 @@ div#inner .slogan {
 	margin-bottom: 50px;
 }
 
+.relative {
+	position: relative;
+}
+
 div.header {
-	background: #C3D9FF;
+	color: #333;
 	height: 50px;
-	font-size: 2em;
 	padding-top: 10px;
 	text-align: left;
 	padding-left: 20px;
 }
 
-div.header span {
-	margin-left: 50px;
-}
 
-div.header #rss_icon {
-	position: absolute;
-	left: 10px;
-	top: 5px;
+div.header div.greeting {
+	float: left;	
+}
+	div.header div.greeting .hello {
+		font-size: 1.7em;
+	}
+	
+	div.header div.greeting .rss {
+		text-decoration: none;
+		padding-left: 2px;
+	}
+	
+	div.header div.greeting .rss:hover {
+		text-decoration: underline;
+	}
+	
+	div.header div.greeting .logout {
+		position: absolute;
+		
+		right: 0px;
+		font-size: 1em;
+		color: #666;		
+	}
+	
+	
+div.header .difficulty {
+	float: left;
+	width: 150px;
+	//width: 200px; 
+	padding-left: 60px; 
+	background: url(/images/mushrum.png) 0px 5px no-repeat;
+	height: 80px;
+	margin-left: 60px;
 }
 
 div.header .slogan {
@@ -122,6 +151,7 @@ div#loader {
 	margin-top: 20px;
 	margin-bottom: 50px;
 	padding: 5px;
+	margin-top: 100px;
 }
 
 div#loader span {

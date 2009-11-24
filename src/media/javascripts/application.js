@@ -9,7 +9,33 @@ var EndlessPhotoScroller = Class.create({
 		
 		this.current_page = starting_page
 		this.page_type = page_type
-		this.loading = false		
+		this.loading = false	
+		this.difficulty = 0
+		
+		if(this.page_type == 'simple'){
+			this.container = $('photos_table')
+		}else if(this.page_type == 'main_big'){
+			this.container = $('photos_container')					
+		}				
+		
+		document.observe('difficulty:changed', this.difficultyChangeObserver.bind(this))	
+	},
+	
+	difficultyChangeObserver:function(evt){
+		var checked = evt.memo
+		
+		if(checked == true){			
+			this.difficulty = 1
+		}else{
+			this.difficulty = 0
+		}
+
+		this.container.update('')
+		this.current_page = 0
+		this.loading = false
+		this.last_photo_id = undefined
+		
+		this.loadPhotos()
 	},
 	
 	getSrollDimensions: function(){
@@ -40,10 +66,13 @@ var EndlessPhotoScroller = Class.create({
 
 			var url = "/photos/" + (this.current_page + 1)
 			
-			url += "?page_type=" + this.page_type
-							
+			params = $H({})
+			
+			params.set('page_type', this.page_type)
+			params.set('difficulty', this.difficulty)
+										
 			if (this.last_photo_id)
-				url += "&last_photo_id=" + this.last_photo_id
+				params.set('last_photo_id', this.last_photo_id)						
 			
 			onSuccess = function(response) {
 				try{
@@ -71,17 +100,9 @@ var EndlessPhotoScroller = Class.create({
 						
 						if (match && match[1]){
 							this.last_photo_id = match[1]
-						}						
-						
-						var container
-						
-						if(this.page_type == 'simple'){
-							container = 'photos_table'
-						}else if(this.page_type == 'main_big'){
-							container = 'photos_container'					
-						}							
+						}																	
 							
-						$(container).insert({
+						$(this.container).insert({
 							bottom : response.responseText
 						})
 					}
@@ -94,6 +115,7 @@ var EndlessPhotoScroller = Class.create({
 				
 			new Ajax.Request(url,
 				{
+					parameters: params,
 					onSuccess : onSuccess.bind(this)
 				})
 		}

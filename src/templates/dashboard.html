@@ -19,17 +19,19 @@
   
   </head>
   <body>    
-    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter.gif"/></a>  
-    <div class="header">       
-      <div style="float: left">                
-        <a href="/feed/{{userid}}" id="rss_icon" title="Subscribe to rss"><img src="/images/feed_48.png"/></a>
-        <span>Hello {{username}}</span>
+    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter_white.gif"/></a>  
+    <div class="header">           
+      <div class="greeting">                        
+        <div class="hello">Hello {{username}}</div>
+        <div class="relative">
+          <a href="/feed/{{userid}}" title="Subscribe to rss" class="rss"><img src="/images/rss.png"/></a>
+          <a href="logout" title="Logout" class="logout">logout</a> 
+        </div>
       </div>
-      <div style="float: left; padding-top: 10px; padding-left: 20px;">
-        <label style="font-size: 20px">Skill level</label>
-      </div>
-      <div style="width: 150px; float: left; padding-top: 10px; padding-left: 10px">
-        <input type="checkbox" class="skill_checkbox" id="skill_checkbox"/>
+      <div class="difficulty">
+        <label style="font-size: 20px">Difficulty</label>
+        <br/>        
+        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" onchange="alert('123')" />
       </div>      
     </div>        
     <div id="container">
