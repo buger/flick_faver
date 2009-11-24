@@ -1,0 +1,76 @@
+<html>
+  <head>
+    <title>FlickFaver - your friend favorite photos</title>    
+    <meta name="keywords" content="flickr photo favorites contacts feed best aggregator" />
+    <meta name="description" content="Take everithing from your flickr, find best photos" />
+    
+    <link rel="alternate" type="application/rss+xml"  title="{{username}} contact favorites" href="/feed/{{userid}}" />
+    
+    <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/scriptaculous/1.8.2/scriptaculous.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/reset/reset-min.css">
+    
+    <script src="/javascripts/iphone.js"></script>
+    <link rel="stylesheet" type="text/css" href="stylesheets/iphohe.css">      
+        
+    <script src="/javascripts/application.js"></script>
+    <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+  
+  </head>
+  <body>    
+    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter.gif"/></a>  
+    <div class="header">       
+      <div style="float: left">                
+        <a href="/feed/{{userid}}" id="rss_icon" title="Subscribe to rss"><img src="/images/feed_48.png"/></a>
+        <span>Hello {{username}}</span>
+      </div>
+      <div style="float: left; padding-top: 10px; padding-left: 20px;">
+        <label style="font-size: 20px">Skill level</label>
+      </div>
+      <div style="width: 150px; float: left; padding-top: 10px; padding-left: 10px">
+        <input type="checkbox" class="skill_checkbox" id="skill_checkbox"/>
+      </div>      
+    </div>        
+    <div id="container">
+      <div class="photos">
+        <table id="photos_table">
+        </table>
+        <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>
+      </div>  
+    </div>
+    <script type="text/javascript">
+    document.observe("dom:loaded", function() {
+      new iPhoneStyle('.skill_checkbox', {checkedLabel:'Easy', uncheckedLabel:'Hard', resizeHandle: false, resizeContainer:false});
+    })
+    </script>
+    <script type="text/javascript">
+    var uservoiceJsHost = ("https:" == document.location.protocol) ? "https://uservoice.com" : "http://cdn.uservoice.com";
+    document.write(unescape("%3Cscript src='" + uservoiceJsHost + "/javascripts/widgets/tab.js' type='text/javascript'%3E%3C/script%3E"))
+    </script>
+    <script type="text/javascript">
+    UserVoice.Tab.show({ 
+      /* required */
+      key: 'flickfaver',
+      host: 'flickfaver.uservoice.com', 
+      forum: '31793', 
+      /* optional */
+      alignment: 'right',
+      background_color:'#36393D', 
+      text_color: 'white',
+      hover_color: '#666',
+      lang: 'en'
+    })
+    </script>                
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-11218453-1");
+      pageTracker._trackPageview();
+      } catch(err) {}
+  </script>  
+  </body>
+</html>

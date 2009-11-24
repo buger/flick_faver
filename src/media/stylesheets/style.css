@@ -161,3 +161,27 @@ a#twitter {
 	margin-right: auto; //
 	padding-bottom: 40px;
 } /* for all browsers*/
+
+
+label.left {
+   float: left;
+   padding: 4px;
+   padding-right: 15px;
+ }
+ 
+ ol {
+   list-style-type: none;
+   margin: 0;
+   padding: 0;
+ }
+ ol li {
+   padding: 10px;
+   margin: 0;
+ }
+ 
+ .iPhoneCheckContainer { 	
+ }
+ 
+ .iPhoneCheckHandle {
+ 	width: 60px; 	
+ }

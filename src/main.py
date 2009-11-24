@@ -96,9 +96,17 @@ class MainHandler(webapp.RequestHandler):
                 photos = photos.fetch(10)
             except:
                 photos = []
-        
-                        
+                                
         doRender(self, "index.html", {'photos':photos})
+
+class UserHandler(webapp.RequestHandler):
+    def get(self):
+        session = Session()
+            
+        if 'username' not in session:
+            self.redirect("/")         
+        
+        doRender(self, "dashboard.html")
         
 class LoadPhotosHandler(webapp.RequestHandler):
     def post(self, page):
@@ -177,7 +185,7 @@ class AuthCallbackHandler(webapp.RequestHandler):
         except ValueError:
             pass
                                                                         
-        self.redirect("/")
+        self.redirect("/dashboard")
         
 class LogoutHandler(webapp.RequestHandler):
     def get(self):
@@ -235,11 +243,12 @@ class RSSHandler(webapp.RequestHandler):
  
 application = webapp.WSGIApplication([
    ('/', MainHandler),
+   ('/dashboard', UserHandler),
    ('/photos/([^\/]*)', LoadPhotosHandler),
    ('/login', LoginHandler),
    ('/logout', LogoutHandler),
    ('/auth_callback', AuthCallbackHandler),
-   ('/feed/([^\/]*)', RSSHandler)
+   ('/feed/([^\/]*)', RSSHandler)   
    ], debug=True)
                 
 def main():

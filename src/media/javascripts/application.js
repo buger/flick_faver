@@ -111,13 +111,16 @@ var EndlessPhotoScroller = Class.create({
 	}
 })
 
-document.observe("dom:loaded", function() {	
+document.observe("dom:loaded", function() {
+	var endless_scroller;
+	
 	if(document.getElementById('photos_container')){
 		var endless_scroller = new EndlessPhotoScroller('main_big', 1)
-	} else {
+	} else if(document.getElementById('photos_table')) {
 		var endless_scroller = new EndlessPhotoScroller()
 		endless_scroller.loadPhotos()
 	}
-						
-	window.onscroll = endless_scroller.onScroll.bind(endless_scroller)
+	
+	if(endless_scroller)
+		window.onscroll = endless_scroller.onScroll.bind(endless_scroller)
 });
