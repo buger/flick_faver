@@ -79,7 +79,7 @@ div.header .difficulty {
 	float: left;
 	width: 150px;
 	//width: 200px;  
-	margin-left: 50px;
+	margin-left: 70px;
 }
 
 div.header .slogan {
@@ -142,7 +142,7 @@ div.photos .photo .author {
 
 div.layouts {	
 	float: left;
-	margin-left: 50px;
+	margin-left: 70px;
 }
 
 div.layouts span {
