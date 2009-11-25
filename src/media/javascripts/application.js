@@ -10,8 +10,17 @@ var EndlessPhotoScroller = Class.create({
 		this.current_page = starting_page
 		this.page_type = page_type
 		this.loading = false	
-		this.difficulty = 0
-		this.layout = 'medium'
+		
+		if($('skill_checkbox'))
+			this.difficulty = $('skill_checkbox').checked == true ? 1 : 0 
+		else
+			this.difficulty = 0
+		
+		if($('layouts'))	
+			var active_layout = $$('#layouts .active').first()
+			
+			if(active_layout)
+				this.layout = active_layout.className.gsub('active','')
 		
 		if(this.page_type == 'simple'){
 			this.container = $('photos_table')
@@ -162,8 +171,11 @@ document.observe("dom:loaded", function() {
 		$('layouts').observe('click', function(ev){
 			var target = Event.findElement(ev)
 			
-			if(!target.hasClassName('.layouts') && !target.hasClassName('active')){
-				$$('#layouts .active').first().removeClassName('active')
+			if(!target.hasClassName('layouts') && !target.hasClassName('active')){
+				var active_layout = $$('#layouts .active').first()
+				
+				if(active_layout)
+					active_layout.removeClassName('active')
 				
 				endless_scroller.changeLayout(target.className)
 				

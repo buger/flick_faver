@@ -44,10 +44,18 @@ def doRender(handler, tname='index.html', values={}, options = {}):
         newval['username'] = handler.session['username']
         newval['userid'] = handler.session['userid']
         newval['fullname'] = handler.session['username']
-        newval['auth_token'] = handler.session['auth_token']        
+        newval['auth_token'] = handler.session['auth_token']
+                
+        if 'difficulty' not in handler.session:
+            newval["difficulty"] = 0
+                        
+        if 'layout' not in handler.session:
+            newval["layout"] = "medium"
+            
+        newval['difficulty'] = handler.session['difficulty']        
+        newval['layout'] = handler.session['layout']                                      
     except KeyError:
         pass
-    
     
     newval['is_admin'] = users.is_current_user_admin()
      
@@ -77,6 +85,18 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
         photos_per_load = 60    
     
     current_user = db.Key.from_path('User',"u%s" % session['userid'])
+    
+    if page == 1:
+        user = User.get(current_user)
+        
+        user.layout = layout
+        session['layout'] = user.layout.strip()
+        
+        user.difficulty = int(difficulty)
+        session['difficulty'] = user.difficulty
+        
+        user.put()
+        
         
     offset = (page-1)*photos_per_load
     
@@ -151,7 +171,7 @@ class LoadPhotosHandler(webapp.RequestHandler):
         if page_type == 'simple':
             difficulty = int(self.request.get('difficulty'))
                         
-            layout = self.request.get('layout')
+            layout = self.request.get('layout').strip()
             
             try:
                 photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty, layout = layout)
@@ -219,7 +239,10 @@ class AuthCallbackHandler(webapp.RequestHandler):
             session["username"]   = user.username
             session["fullname"]   = user.fullname
             session["userid"]     = user.userid
-            session["auth_token"] = user_info.auth_token        
+            session["auth_token"] = user_info.auth_token
+            
+            session["difficulty"] = user.difficulty
+            session["layout"] = user.layout        
         except ValueError:
             pass
                                                                         

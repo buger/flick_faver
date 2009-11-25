@@ -29,17 +29,17 @@
       </div>
       <div class="difficulty">
         <div style="font-size: 18px; margin-bottom: 5px;">Difficulty</div>        
-        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" />
+        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" {% ifequal difficulty 1 %}checked="checked"{% endifequal %}/>
       </div>
       <div class="layouts" id="layouts">
         <div class="relative">
-          <div class="big">
+          <div class="big {% ifequal layout 'big' %} active {% endifequal %}">
             &nbsp;
           </div>          
-          <div class="medium active">
+          <div class="medium {% ifequal layout 'medium' %} active {% endifequal %}">
             &nbsp;            
           </div>
-          <div class="small">
+          <div class="small {% ifequal layout 'small' %} active {% endifequal %}">
             &nbsp;
           </div>          
         </div>

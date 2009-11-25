@@ -22,10 +22,13 @@ class User(db.Model):
     updated_at = db.DateTimeProperty() # Last favorites update 
     created_at = db.DateTimeProperty(auto_now_add = True)
     
+    difficulty = db.IntegerProperty(default = 0)
+    layout     = db.StringProperty(default = 'medium')
+    
     processing_state = db.IntegerProperty(choices=set([const.StateProcessing, const.StateWaiting]))      
           
 
-class Photo(db.Expando):        
+class Photo(db.Model):        
     photo_id = db.IntegerProperty(required = True)
     uri      = db.LinkProperty()
     title    = db.StringProperty() 
