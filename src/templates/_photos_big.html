@@ -1,3 +1,8 @@
+{% if first_date%}
+<div class="time_header">
+    {{ first_date|pretty_date|capfirst }}
+</tr>
+{% endif %}
 {% for photo in photos %}
 <div class="photo">
   <a href="{{photo.uri}}" target="_blank"><img src="{{photo.image_url}}"/></a> 

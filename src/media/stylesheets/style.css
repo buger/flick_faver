@@ -40,6 +40,7 @@ div#inner .slogan {
 
 .relative {
 	position: relative;
+	clear: both;
 }
 
 div.header {
@@ -68,9 +69,7 @@ div.header div.greeting {
 	}
 	
 	div.header div.greeting .logout {
-		position: absolute;
-		
-		right: 0px;
+		padding-left: 2px;
 		font-size: 1em;
 		color: #666;		
 	}
@@ -79,11 +78,8 @@ div.header div.greeting {
 div.header .difficulty {
 	float: left;
 	width: 150px;
-	//width: 200px; 
-	padding-left: 60px; 
-	background: url(/images/mushrum.png) 0px 5px no-repeat;
-	height: 80px;
-	margin-left: 60px;
+	//width: 200px;  
+	margin-left: 50px;
 }
 
 div.header .slogan {
@@ -142,6 +138,48 @@ div.photos .photo .title a {
 div.photos .photo .author {
 	padding-top: 2px;
 	font-size: 0.8em;
+}
+
+div.layouts {	
+	float: left;
+	margin-left: 50px;
+}
+
+div.layouts span {
+	font-size: 1em;
+	padding-left: 15px;
+}
+
+div.layouts .relative div {
+	float: left;
+	cursor: pointer;
+	border: 2px solid #ccc;	
+}
+
+div.layouts .big {
+	width: 50px;
+	height: 50px;
+}
+
+div.layouts .medium {
+	width: 30px;
+	height: 30px;
+	margin-left: 15px;
+	margin-top: 20px;
+}
+
+div.layouts .small {
+	width: 10px;
+	height: 10px;
+	margin-left: 15px;
+	margin-top: 40px;
+	font-size: 1px;
+	line-height: 1px;
+}
+
+div.layouts .relative .active {
+	background: #eee;
+	border: 2px solid #666;
 }
 
 div#loader {

@@ -11,6 +11,7 @@ var EndlessPhotoScroller = Class.create({
 		this.page_type = page_type
 		this.loading = false	
 		this.difficulty = 0
+		this.layout = 'medium'
 		
 		if(this.page_type == 'simple'){
 			this.container = $('photos_table')
@@ -21,6 +22,13 @@ var EndlessPhotoScroller = Class.create({
 		document.observe('difficulty:changed', this.difficultyChangeObserver.bind(this))	
 	},
 	
+	clear:function(){
+		this.container.update('')
+		this.current_page = 0
+		this.loading = false
+		this.last_photo_id = undefined		
+	},
+	
 	difficultyChangeObserver:function(evt){
 		var checked = evt.memo
 		
@@ -29,12 +37,15 @@ var EndlessPhotoScroller = Class.create({
 		}else{
 			this.difficulty = 0
 		}
-
-		this.container.update('')
-		this.current_page = 0
-		this.loading = false
-		this.last_photo_id = undefined
 		
+		this.clear()		
+		this.loadPhotos()
+	},
+	
+	changeLayout:function(layout){
+		this.layout = layout
+		
+		this.clear()		
 		this.loadPhotos()
 	},
 	
@@ -70,6 +81,7 @@ var EndlessPhotoScroller = Class.create({
 			
 			params.set('page_type', this.page_type)
 			params.set('difficulty', this.difficulty)
+			params.set('layout', this.layout)
 										
 			if (this.last_photo_id)
 				params.set('last_photo_id', this.last_photo_id)						
@@ -145,4 +157,18 @@ document.observe("dom:loaded", function() {
 	
 	if(endless_scroller)
 		window.onscroll = endless_scroller.onScroll.bind(endless_scroller)
+		
+	if($('layouts')){
+		$('layouts').observe('click', function(ev){
+			var target = Event.findElement(ev)
+			
+			if(!target.hasClassName('.layouts') && !target.hasClassName('active')){
+				$$('#layouts .active').first().removeClassName('active')
+				
+				endless_scroller.changeLayout(target.className)
+				
+				target.addClassName('active')			
+			}			
+		})
+	}
 });

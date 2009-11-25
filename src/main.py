@@ -63,12 +63,22 @@ def doRender(handler, tname='index.html', values={}, options = {}):
         handler.response.out.write(outstr)
         return True 
  
-def get_photos(page, start_from = None, difficulty = 0):
+def get_photos(page, start_from = None, difficulty = 0, layout = None):
     session = Session()
+                        
+    if layout == 'big':
+        photos_in_group = 1
+        photos_per_load = 10
+    elif layout == 'medium':
+        photos_in_group = 3
+        photos_per_load = 30
+    else:
+        photos_in_group = 6
+        photos_per_load = 60    
     
     current_user = db.Key.from_path('User',"u%s" % session['userid'])
         
-    offset = (page-1)*PHOTOS_PER_LOAD
+    offset = (page-1)*photos_per_load
     
     start_from_photo = None
     
@@ -89,12 +99,13 @@ def get_photos(page, start_from = None, difficulty = 0):
         else:
             photos.filter('created_at < ', start_from_photo.created_at)
         
-        photos = photos.fetch(PHOTOS_PER_LOAD)
+        photos = photos.fetch(photos_per_load)
     else:
-        photos = photos.fetch(PHOTOS_PER_LOAD, offset)
-                        
+        photos = photos.fetch(photos_per_load, offset)
+
+    
     # in groups of 3
-    photos_groups = [itertools.islice(photos, i*3, (i+1)*3, 1) for i in range(PHOTOS_PER_LOAD/3)]          
+    photos_groups = [itertools.islice(photos, i*photos_in_group, (i+1)*photos_in_group, 1) for i in range(photos_per_load/photos_in_group)]          
     
     if len(photos) == 0:
         last_date = None
@@ -139,16 +150,18 @@ class LoadPhotosHandler(webapp.RequestHandler):
         
         if page_type == 'simple':
             difficulty = int(self.request.get('difficulty'))
+                        
+            layout = self.request.get('layout')
             
             try:
-                photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty)
+                photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty, layout = layout)
             except KeyError:                    
                 photos_groups = []
                 last_photo = None
                 first_date = None
                 
                     
-            doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date})
+            doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date, 'layout':layout})
         elif page_type == 'main_big':
             photos = Photo.all().filter("skill_level =", 1).order("-updated_at")
             photos = photos.fetch(10, 10*(page-1))

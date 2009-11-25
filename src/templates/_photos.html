@@ -1,12 +1,11 @@
 {% if first_date%}
 <tr class="time_header">
-  <td colspan="3" align="left">
+  <td colspan="10" align="left">
     {{ first_date|pretty_date|capfirst }}
   </td>
 </tr>
 {% endif %}
 {% for photo_group in photos_groups %}
-
 {% if forloop.first and first_date %}
 <tr>
 {% else %}
@@ -15,10 +14,20 @@
 
   {% for photo in photo_group %}
   <td valign="top" class="photo" align="left" {% if forloop.parentloop.last and forloop.last %} photo_id="{{photo.photo_id}}" {% endif %}>
+    {% ifnotequal layout "small" %}
     <div class="title"><a href="{{photo.author_uri}}" target="_blank">{{photo.author}}</a></div>
+    {% endifnotequal %}
     <div>              
       <a href="{{photo.uri}}" target="_blank">
+        {% ifequal layout "medium" %}
         <img src="{{photo.image_m_url}}"/>
+        {% endifequal %}
+        {% ifequal layout "big" %}
+        <img src="{{photo.image_url}}"/>
+        {% endifequal %}
+        {% ifequal layout "small" %}
+        <img src="{{photo.image_s_url}}"/>
+        {% endifequal %}                 
       </a> 
     </div>
     <div class="author"></div>        

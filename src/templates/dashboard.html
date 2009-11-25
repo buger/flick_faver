@@ -22,21 +22,32 @@
     <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter_white.gif"/></a>  
     <div class="header">           
       <div class="greeting">                        
-        <div class="hello">Hello {{username}}</div>
+        <div class="hello">{{username}}</div>
         <div class="relative">
-          <a href="/feed/{{userid}}" title="Subscribe to rss" class="rss"><img src="/images/rss.png"/></a>
           <a href="logout" title="Logout" class="logout">logout</a> 
         </div>
       </div>
       <div class="difficulty">
-        <label style="font-size: 20px">Difficulty</label>
-        <br/>        
+        <div style="font-size: 18px; margin-bottom: 5px;">Difficulty</div>        
         <input type="checkbox" class="skill_checkbox" id="skill_checkbox" />
-      </div>      
+      </div>
+      <div class="layouts" id="layouts">
+        <div class="relative">
+          <div class="big">
+            &nbsp;
+          </div>          
+          <div class="medium active">
+            &nbsp;            
+          </div>
+          <div class="small">
+            &nbsp;
+          </div>          
+        </div>
+      </div>
     </div>        
     <div id="container">
-      <div class="photos" style="border: 1px solid white">
-        <table id="photos_table">
+      <div class="photos" style="border: 1px solid white;">
+        <table id="photos_table" style="width: 100%">
         </table>
         <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>
       </div>  
