@@ -83,7 +83,11 @@ def get_photos(page, start_from = None, difficulty = 0):
     
     if start_from:                        
         start_from_photo = Photo.get_by_key_name("p%s" % start_from, current_user)
-        photos.filter('created_at < ', start_from_photo.created_at)
+
+        if difficulty == 1:
+            photos.filter('updated_at < ', start_from_photo.updated_at)
+        else:
+            photos.filter('created_at < ', start_from_photo.created_at)
         
         photos = photos.fetch(PHOTOS_PER_LOAD)
     else:
