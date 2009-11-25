@@ -29,9 +29,9 @@
       </div>
       <div class="difficulty">
         <div style="font-size: 18px; margin-bottom: 5px;">Difficulty</div>        
-        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" {% ifequal difficulty 1 %}checked="checked"{% endifequal %}/>
+        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" {% ifequal difficulty 1 %}checked="checked"{% endifequal %} title="Change difficulty"/>
       </div>
-      <div class="layouts" id="layouts">
+      <div class="layouts" id="layouts" title="Change layout of page">
         <div class="relative">
           <div class="big {% ifequal layout 'big' %} active {% endifequal %}">
             &nbsp;
