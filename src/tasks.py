@@ -196,7 +196,7 @@ class UpdateContactsFavesHandler(webapp.RequestHandler):
             if self.request.get('non-blocking'):
                 countdown = 0
             else:
-                countdown = 60
+                countdown = 120
     
             task = taskqueue.Task(url="/task/update_contacts_faves", 
                                   countdown = countdown,
