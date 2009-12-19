@@ -5,6 +5,7 @@ import sys
 
 sys.path.append("/home/buger/work/google_appengine")
 sys.path.append("/home/buger/work/google_appengine/lib/yaml/lib")
+sys.path.append('/home/chasm/i/google_appengine/lib/webob') 
 
 from google.appengine.ext.remote_api import remote_api_stub
 from google.appengine.ext import db

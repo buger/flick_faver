@@ -156,19 +156,20 @@ div.layouts .relative div {
 	border: 2px solid #ccc;	
 }
 
-div.layouts .big {
+/* big */
+div.layouts .l_500 { 
 	width: 50px;
 	height: 50px;
 }
 
-div.layouts .medium {
+div.layouts .l_501 {
 	width: 30px;
 	height: 30px;
 	margin-left: 15px;
 	margin-top: 20px;
 }
 
-div.layouts .small {
+div.layouts .l_502 {
 	width: 10px;
 	height: 10px;
 	margin-left: 15px;

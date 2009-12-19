@@ -11,20 +11,32 @@ from models import *
 
 
 FLICKR_API_KEY = 'e5504def2a46e4a654ace751ab1cca88'
+#FLICKR_API_KEY = 'e6929d1308546d366dad4a9d36901c6b'
+
 FLICKR_SECRET = 'ff8a88e4c4dd7cec'
+#FLICKR_SECRET = '567ec3c72f27c571'
+
 FLICKR_SIG = '92de0d7a6e1e47839448060a372ceff1' # ff8a88e4c4dd7cecapi_keye5504def2a46e4a654ace751ab1cca88permsread
+#FLICKR_SIG = '47a4dad57755a116205701c76030215c'
 
 FLICKR_AUTH_URL = "http://flickr.com/services/auth/?api_key=%s&perms=read&api_sig=%s" % (FLICKR_API_KEY, FLICKR_SIG)
 
 class FlickrUserInfo:
     def __init__(self, auth_token, userid, username, fullname):
-        self.auth_token = auth_token
-        self.userid = userid
+        self.token = auth_token
+        self.nsid = userid
         self.username = username
         self.fullname = fullname
 
 class FlickrAuthError(StandardError):
     pass
+
+def token_signature(token, method):
+    string_for_md5 = "%sapi_key%sauth_token%smethod%s" % (FLICKR_SECRET, FLICKR_API_KEY, token, method)
+    
+    logging.warning(string_for_md5)
+    
+    return md5.new(string_for_md5).hexdigest() 
 
 def get_user_info(frob):
     string_for_md5 = "%sapi_key%sfrob%smethodflickr.auth.getToken" % (FLICKR_SECRET, FLICKR_API_KEY, frob)
@@ -54,11 +66,16 @@ def get_user_info(frob):
 
 def fetch_and_parse( url ) :
    result = urlfetch.fetch(url)
+   
    if result.status_code == 200:
        return minidom.parseString(result.content)  
-        
-def call_method(method, params):
+
+def call_method(method, params, auth_token = None):
+    if auth_token:
+        params += "&auth_token=%s&api_sig=%s" % (auth_token, token_signature(auth_token, method))
+            
     url = "http://api.flickr.com/services/rest/?method="+method+"&api_key="+FLICKR_API_KEY+"&"+params
+    logging.info("Calling method. Url: %s" % url)
     
     return fetch_and_parse(url)
 
@@ -102,9 +119,49 @@ def get_user_info_by_url(url):
     
     return (userid, username)
 
-def get_contact_faves(nsid, per_page):
-    photos_xml = call_method("flickr.favorites.getPublicList","user_id=%s&extras=url_s,url_m,url_sq,path_alias,owner_name&per_page=%s" % (nsid, per_page))
+
+PHOTOS_PER_CONTACT = 20
+
+def get_faves(nsid, per_page = PHOTOS_PER_CONTACT):    
+    photos_xml = call_method("flickr.favorites.getPublicList","user_id=%s&extras=url_m,path_alias,owner_name&per_page=%s" % (nsid, per_page))
 
     return photos_xml.getElementsByTagName('photo')
 
+
+CONTACTS_PER_PAGE = 5
+
+def get_contacts(nsid = None, page = 1):
+    '''Returns contacts in raw XML'''    
+    response = call_method("flickr.contacts.getPublicList", 
+                           "user_id=%s&per_page=%s&page=%s" % (nsid, CONTACTS_PER_PAGE, page))
     
+    contacts_root_xml = response.getElementsByTagName('contacts')[0]
+    
+    pages = int(contacts_root_xml.getAttribute('pages'))    
+    contacts  = response.getElementsByTagName('contact')
+    
+    return (contacts, pages)
+            
+
+
+ICON_URL_FORMAT = "http://farm%s.static.flickr.com/%s/buddyicons/%s.jpg"
+
+def icon_url(farm = None, server = None, nsid = None):
+    '''Returns user icon url'''
+    
+    if farm is None or server is None or nsid is None:    
+        raise StandardError, "Can't generate icon_url. Not enough data." 
+    
+    return ICON_URL_FORMAT % (farm, server, nsid)    
+
+
+PHOTO_URL_FORMAT = "http://www.flickr.com/photos/%s/%s"
+
+def photo_uri(user, photo_id):
+    return "http://www.flickr.com/photos/%s/%s" % (user, photo_id)
+
+
+USER_URL_FORMAT = "http://www.flickr.com/photos/%s" 
+
+def user_uri(user):
+    return USER_URL_FORMAT % user

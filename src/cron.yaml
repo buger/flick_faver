@@ -1,15 +1,16 @@
 cron:
-- description: Update contacts faver
-  url: /task/update_favorites_cron
-  schedule: every 5 minutes
+- description: Update active users
+  url: /task/update_favorites_cron/active
+  schedule: every 12 hours
   timezone: Europe/Moscow
   
-- description: Update contacts
+- description: Update inactive users
+  url: /task/update_favorites_cron/inactive
+  schedule: every 48 hours
+  timezone: Europe/Moscow  
+
+- description: Update inactive users
   url: /task/update_contacts_cron
   schedule: every 24 hours
-  timezone: Europe/Moscow
+  timezone: Europe/Moscow    
   
-- description: Update rss
-  url: /task/update_rss_cron
-  schedule: every 6 hours
-  timezone: Europe/Moscow

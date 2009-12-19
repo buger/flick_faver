@@ -18,7 +18,9 @@ from google.appengine.api.urlfetch import DownloadError
 
 from appengine_utilities.sessions import Session
 
-from models import *
+from models.user import User
+from models.photo import *
+
 from config import *
 import utils
 import flickr
@@ -42,7 +44,7 @@ def doRender(handler, tname='index.html', values={}, options = {}):
     
     try:
         newval['username'] = handler.session['username']
-        newval['userid'] = handler.session['userid']
+        newval['nsid'] = handler.session['nsid']
         newval['fullname'] = handler.session['username']
         newval['auth_token'] = handler.session['auth_token']
                 
@@ -50,7 +52,7 @@ def doRender(handler, tname='index.html', values={}, options = {}):
             newval["difficulty"] = 0
                         
         if 'layout' not in handler.session:
-            newval["layout"] = "medium"
+            newval["layout"] = const.LayoutMedium
             
         newval['difficulty'] = handler.session['difficulty']        
         newval['layout'] = handler.session['layout']                                      
@@ -74,55 +76,55 @@ def doRender(handler, tname='index.html', values={}, options = {}):
 def get_photos(page, start_from = None, difficulty = 0, layout = None):
     session = Session()
                         
-    if layout == 'big':
+    if layout == const.LayoutBig:
         photos_in_group = 1
         photos_per_load = 10
-    elif layout == 'medium':
+    elif layout == const.LayoutMedium:
         photos_in_group = 3
-        photos_per_load = 30
+        photos_per_load = 21
     else:
         photos_in_group = 6
         photos_per_load = 60    
     
-    current_user = db.Key.from_path('User',"u%s" % session['userid'])
+    current_user = db.Key.from_path('User',session['nsid'])
     
     if page == 1:
         user = User.get(current_user)
         
         user.layout = layout
-        session['layout'] = user.layout.strip()
+        session['layout'] = user.layout
         
         user.difficulty = int(difficulty)
         session['difficulty'] = user.difficulty
         
         user.put()
-        
+    
         
     offset = (page-1)*photos_per_load
     
     start_from_photo = None
     
-    photos = Photo.all()    
+    photos = UserPhotoIndex.all(keys_only = True)    
     photos.ancestor(current_user)
     
-    if difficulty == 1:
-        photos.filter('skill_level =', 1)
-        photos.order('-updated_at')
+    if difficulty == const.SkillLevelEasy:
+        photos.order('-skill_changed_date')
     else:
-        photos.order('-created_at')
+        photos.order('-created')
     
     if start_from:                        
-        start_from_photo = Photo.get_by_key_name("p%s" % start_from, current_user)
-
-        if difficulty == 1:
-            photos.filter('updated_at < ', start_from_photo.updated_at)
+        start_from_photo = UserPhotoIndex.get_by_key_name(start_from, current_user)
+        
+        if difficulty == const.SkillLevelEasy:
+            photos.filter('skill_changed_date < ', start_from_photo.skill_changed_date)
         else:
-            photos.filter('created_at < ', start_from_photo.created_at)
+            photos.filter('created < ', start_from_photo.created)
         
         photos = photos.fetch(photos_per_load)
     else:
         photos = photos.fetch(photos_per_load, offset)
 
+    photos = [Photo.get_by_key_name(photo_index_key.name()) for photo_index_key in photos]
     
     # in groups of 3
     photos_groups = [itertools.islice(photos, i*photos_in_group, (i+1)*photos_in_group, 1) for i in range(photos_per_load/photos_in_group)]          
@@ -130,17 +132,17 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
     if len(photos) == 0:
         last_date = None
     else:
-        if difficulty == 1:
-            last_date = photos[0].updated_at
+        if difficulty == const.SkillLevelEasy:
+            last_date = photos[0].skill_changed_date
         else:
-            last_date = photos[0].created_at
+            last_date = photos[0].created
         
     return (photos_groups, start_from_photo, last_date)
         
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        photos = Photo.all().filter('skill_level =', 1).order("-created_at")
+        photos = Photo.all().order("-skill_changed_date")
         
         try:
             photos = photos.fetch(10)
@@ -155,7 +157,7 @@ class MainHandler(webapp.RequestHandler):
 class UserHandler(webapp.RequestHandler):
     def get(self):
         session = Session()
-            
+                
         if 'username' not in session:
             self.redirect("/")         
         
@@ -169,22 +171,20 @@ class LoadPhotosHandler(webapp.RequestHandler):
                 
         
         if page_type == 'simple':
-            difficulty = int(self.request.get('difficulty'))
-                        
-            layout = self.request.get('layout').strip()
+            difficulty = int(self.request.get('difficulty'))                                
+            layout = int(self.request.get('layout').replace('l_',''))
             
-            try:
-                photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty, layout = layout)
-            except KeyError:                    
-                photos_groups = []
-                last_photo = None
-                first_date = None
-                
-                    
+            #try:
+            photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty, layout = layout)
+            #except KeyError:                    
+            #    photos_groups = []
+            #    last_photo = None
+            #    first_date = None            
+            
             doRender(self, "_photos.html", {'photos_groups':photos_groups, 'first_date':first_date, 'layout':layout})
         elif page_type == 'main_big':
-            photos = Photo.all().filter("skill_level =", 1).order("-updated_at")
-            photos = photos.fetch(10, 10*(page-1))
+            photos = Photo.all().order("-skill_changed_date")
+            photos = photos.fetch(10, 10*(page-1))            
             
             doRender(self, "_photos_big.html", {'photos': photos})
         else:
@@ -199,52 +199,60 @@ class LoginHandler(webapp.RequestHandler):
         
 class AuthCallbackHandler(webapp.RequestHandler):
     def get(self):
-        try:
-            if self.request.get('userid'):
-                user_info = flickr.FlickrUserInfo("", self.request.get('userid'), self.request.get('userid'), "")
-            else:
-                frob = self.request.get('frob')                        
-                
-                try:
-                    user_info = flickr.get_user_info(frob)
-                except:
-                    user_info = flickr.get_user_info(frob)                
+        if self.request.get('userid'):
+            user_info = flickr.FlickrUserInfo("", self.request.get('userid'), self.request.get('userid'), "")
+        else:
+            frob = self.request.get('frob')                        
             
+            try:
+                user_info = flickr.get_user_info(frob)
+            except:
+                user_info = flickr.get_user_info(frob)                
         
-            user = User.get_by_key_name("u%s" % user_info.userid)
+    
+        user = User.get_by_key_name(user_info.nsid)
+        
+        session = Session()
+
+        if user is None:
+            user = User(key_name = user_info.nsid,
+                        username = user_info.username,
+                        fullname = user_info.fullname, 
+                        token    = user_info.token,     
+                        status   = const.UserRegistred,                      
+                        last_login = datetime.datetime.now())
             
-            session = Session()
-                    
-            if not user:
-                user = User(key_name = "u%s" % user_info.userid,
-                            userid   = user_info.userid,
-                            username = user_info.username,
-                            fullname = user_info.fullname,
-                            updated_at = datetime.datetime.now(),
-                            last_login = datetime.datetime.now(),
-                            
-                            processing_state = const.StateProcessing)
-                user.put()
-                
-                taskqueue.Task(url="/task/update_contacts", 
-                               params={'user_key':user.key(), 'update_favorites':True}, method = 'GET').add("update-contacts")                           
-            else:
-                user.last_login = datetime.datetime.now()
-                
-                try:
-                    user.put()
-                except:
-                    user.put()
-                    
-            session["username"]   = user.username
+        user.status = const.UserRegistred
+         
+        task = None
+        
+        if not user.is_saved() or user.status == const.UserUnRegistred:
+            task = taskqueue.Task(url="/task/user/update_contacts", 
+                                  params={'key':user.key(), 'update_favorites':True, 'initial_update': True})                           
+        
+        user.username = user_info.username
+        user.fullname = user.fullname
+        user.token = user_info.token
+        user.last_login = datetime.datetime.now()
+        
+        try:
+            user.put()
+        except:
+            user.put()
+        
+        if task:
+            task.add("update-contacts")
+        
+        session["username"]   = user.username
+        
+        if user.fullname:
             session["fullname"]   = user.fullname
-            session["userid"]     = user.userid
-            session["auth_token"] = user_info.auth_token
             
-            session["difficulty"] = user.difficulty
-            session["layout"] = user.layout        
-        except ValueError:
-            pass
+        session["nsid"]     = user.nsid
+        session["auth_token"] = user.token
+        
+        session["difficulty"] = user.difficulty
+        session["layout"] = user.layout        
                                                                         
         self.redirect("/dashboard")
         
@@ -262,12 +270,12 @@ class RSSHandler(webapp.RequestHandler):
         
         userid = urllib.unquote_plus(urllib.unquote(userid))
         
-        user = User.get_by_key_name("u%s" % userid)
+        user = User.get_by_key_name(userid)
         
         if user is None:
             self.error(404)
         else:   
-            feed = RSSFeed.get_or_insert("r%s" % user.userid)
+            feed = RSSFeed.get_or_insert(user.userid)
             
             serve = True
             

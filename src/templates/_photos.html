@@ -19,13 +19,13 @@
     {% endifnotequal %}
     <div>              
       <a href="{{photo.uri}}" target="_blank">
-        {% ifequal layout "medium" %}
+        {% ifequal layout 501 %}
         <img src="{{photo.image_m_url}}"/>
         {% endifequal %}
-        {% ifequal layout "big" %}
+        {% ifequal layout 500 %}
         <img src="{{photo.image_url}}"/>
         {% endifequal %}
-        {% ifequal layout "small" %}
+        {% ifequal layout 502 %}
         <img src="{{photo.image_s_url}}"/>
         {% endifequal %}                 
       </a> 

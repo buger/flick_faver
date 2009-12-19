@@ -4,7 +4,7 @@
     <meta name="keywords" content="flickr photo favorites contacts feed best aggregator" />
     <meta name="description" content="Take everithing from your flickr, find best photos" />
     
-    <link rel="alternate" type="application/rss+xml"  title="{{username}} contact favorites" href="/feed/{{userid}}" />
+    <link rel="alternate" type="application/rss+xml"  title="{{username}} contact favorites" href="/feed/{{nsid}}" />
     
     <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/scriptaculous/1.8.2/scriptaculous.js"></script>
@@ -33,13 +33,13 @@
       </div>
       <div class="layouts" id="layouts" title="Change layout of page">
         <div class="relative">
-          <div class="big {% ifequal layout 'big' %} active {% endifequal %}">
+          <div class="l_500 {% ifequal layout '500' %} active {% endifequal %}">
             &nbsp;
           </div>          
-          <div class="medium {% ifequal layout 'medium' %} active {% endifequal %}">
+          <div class="l_501 active">
             &nbsp;            
           </div>
-          <div class="small {% ifequal layout 'small' %} active {% endifequal %}">
+          <div class="l_502 {% ifequal layout '502' %} active {% endifequal %}">
             &nbsp;
           </div>          
         </div>

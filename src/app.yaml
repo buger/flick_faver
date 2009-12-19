@@ -1,5 +1,5 @@
-application: flickfaver
-version: live
+application: flickfaver-v2
+version: development
 runtime: python
 api_version: 1
 
@@ -15,6 +15,10 @@ handlers:
 - url: /remote_api
   script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
   login: admin
+  
+- url: /_ah/queue/deferred
+  script: $PYTHON_LIB/google/appengine/ext/deferred/deferred.py
+  login: admin
 
 - url: /images
   static_dir: media/images
@@ -25,9 +29,6 @@ handlers:
 - url: /javascripts
   static_dir: media/javascripts
 
-- url: /api/.*
-  script: api.py
-  
 - url: /task/.*
   script: tasks.py  
     

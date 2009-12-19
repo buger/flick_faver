@@ -1,16 +1,31 @@
-# Contacts
-ContactSimple = 100
-ContactFamily = 101
-ContactFriend = 102
+SkillLevelEasy = 100
+SkillLevelHard = 101
+
+SkillLevels = [SkillLevelEasy, SkillLevelHard]
 
 #User
-UserStateRegistred = 201
-UserStateUnRegistred = 201
+UserRegistred = 200
+UserUnRegistred = 201
+
+UserStatuses = [UserRegistred, UserUnRegistred]
 
 #Photo
-PhotoTypeContact = 301
-PhotoTypeFavorite = 302
+PhotoTypeContact = 300
+PhotoTypeFavorite = 301
+
+PhotoTypes = [PhotoTypeContact, PhotoTypeFavorite]
+
 
 #Processing states
-StateWaiting = 0
-StateProcessing = 1
+StateWaiting = 400
+StateProcessing = 401
+
+States = [StateWaiting, StateProcessing]
+
+
+#Layout types
+LayoutBig = 500
+LayoutMedium = 501
+LayoutSmall = 502
+
+Layouts = [LayoutBig, LayoutMedium, LayoutSmall]

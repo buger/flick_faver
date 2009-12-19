@@ -1,48 +1,23 @@
 indexes:
-- kind: Photo
+- kind: UserPhotoIndex
   ancestor: yes
   properties:
-  - name: created_at
-    direction: desc
-
-- kind: Photo
+  - name: created
+    direction: desc              
+    
+- kind: UserPhotoIndex
   ancestor: yes
   properties:
-  - name: created_at
-
-- kind: Photo
-  ancestor: yes
-  properties:
-  - name: skill_level
-  - name: created_at
+  - name: skill_changed_date
     direction: desc
     
-- kind: Photo
+- kind: PhotoIndex
   ancestor: yes
   properties:
-  - name: skill_level
-  - name: updated_at
-    direction: desc    
-
-- kind: Photo
-  properties:
-  - name: skill_level
-  - name: created_at
+  - name: created
     direction: desc
-
-- kind: Photo
-  properties:
-  - name: skill_level
-  - name: updated_at
-    direction: desc
-
+    
 - kind: User
   properties:
-  - name: processing_state
-  - name: updated_at
-    
-- kind: FeedPost
-  ancestor: yes
-  properties:
-  - name: created_at
-    direction: desc
+  - name: status
+  - name: last_login

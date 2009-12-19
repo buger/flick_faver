@@ -12,15 +12,15 @@ var EndlessPhotoScroller = Class.create({
 		this.loading = false	
 		
 		if($('skill_checkbox'))
-			this.difficulty = $('skill_checkbox').checked == true ? 1 : 0 
+			this.difficulty = $('skill_checkbox').checked == true ? 100 : 101 
 		else
-			this.difficulty = 0
+			this.difficulty = 101
 		
 		if($('layouts'))	
 			var active_layout = $$('#layouts .active').first()
 			
-			if(active_layout)
-				this.layout = active_layout.className.gsub('active','')
+		if(active_layout)
+			this.layout = active_layout.className.gsub('active','')
 		
 		if(this.page_type == 'simple'){
 			this.container = $('photos_table')
@@ -42,9 +42,9 @@ var EndlessPhotoScroller = Class.create({
 		var checked = evt.memo
 		
 		if(checked == true){			
-			this.difficulty = 1
+			this.difficulty = 100
 		}else{
-			this.difficulty = 0
+			this.difficulty = 101
 		}
 		
 		this.clear()		
@@ -120,8 +120,11 @@ var EndlessPhotoScroller = Class.create({
 						match = response.responseText.match(regexp)
 						
 						if (match && match[1]){
-							this.last_photo_id = match[1]
-						}																	
+							this.last_photo_id = match[1]							                           
+						}else{
+							this.last_photo_id = undefined
+							this.the_end = true
+						}
 							
 						$(this.container).insert({
 							bottom : response.responseText
@@ -143,14 +146,16 @@ var EndlessPhotoScroller = Class.create({
 	},
 	
 	onScroll: function(){
-		var scroll_dimensions = this.getSrollDimensions()
-		var scroll_offset = document.body.scrollTop
-		var window_height = typeof (window.innerWidth) == 'number' ? window.innerWidth
-				: document.body.clientHeight
-				
-		if ((scroll_offset + window_height + 400) > scroll_dimensions[1]) {
-			this.loadPhotos()
-		}			
+		if(!this.the_end){
+			var scroll_dimensions = this.getSrollDimensions()
+			var scroll_offset = document.body.scrollTop
+			var window_height = typeof (window.innerWidth) == 'number' ? window.innerWidth
+					: document.body.clientHeight
+					
+			if ((scroll_offset + window_height + 400) > scroll_dimensions[1]) {
+				this.loadPhotos()
+			}			
+		}
 	}
 })
 
