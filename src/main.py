@@ -265,7 +265,10 @@ class LogoutHandler(webapp.RequestHandler):
         
  
 class RSSHandler(webapp.RequestHandler):                 
-    def get(self, userid):        
+    def get(self, userid):
+        self.response.set_status(304)
+        return True
+                
         HTTP_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
         
         userid = urllib.unquote_plus(urllib.unquote(userid))
