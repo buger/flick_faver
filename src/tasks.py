@@ -176,7 +176,7 @@ class UpdateSubscriberIndexHandler(webapp.RequestHandler):
         six_hours_ago = datetime.datetime.now()-datetime.timedelta(minutes=360)
         
         if contact.updated is None or contact.updated < six_hours_ago:                     
-            photo_indexes = PhotoIndex.all()
+            photo_indexes = PhotoIndex.all(keys_only = True)
             photo_indexes.ancestor(user)
             
             if contact.updated is not None and contact.updated:
@@ -199,13 +199,18 @@ class UpdateSubscriberIndexHandler(webapp.RequestHandler):
                     
             photo_counter = 0
             
-            for photo_index in photo_indexes:            
-                user_photo_index = UserPhotoIndex.get_by_key_name(photo_index.key().name(), subscriber)
+            for photo_index_key in photo_indexes:            
+                logging.info("photo_index %s", photo_index_key)
+                try:
+                    user_photo_index = UserPhotoIndex.get_by_key_name(photo_index_key.name(), subscriber)
+                except AttributeError:
+                    db.delete(db.Key.from_path('UserPhotoIndex', photo_index_key.name(), 'User', subscriber.key().name()))
+                    user_photo_index = None
                 
                 if user_photo_index is None:
-                    user_photo_index = UserPhotoIndex(key_name = photo_index.key().name(),
+                    user_photo_index = UserPhotoIndex(key_name = photo_index_key.name(),
                                                       parent   = subscriber,
-                                                      favorited_by = user.key().name())
+                                                      favorited_by = user)
                     
                     if self.request.get('initial_update'):
                         user_photo_index.created = start_from_time - datetime.timedelta(microseconds=(10*photo_counter))

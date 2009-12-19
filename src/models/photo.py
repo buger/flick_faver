@@ -93,4 +93,4 @@ class PhotoIndex(db.Expando):
     
 class UserPhotoIndex(PhotoIndex):            
     favorited_count = db.IntegerProperty(default = 1)
-    favorited_by    = db.StringProperty()    
+    favorited_by    = db.ReferenceProperty(User)    
