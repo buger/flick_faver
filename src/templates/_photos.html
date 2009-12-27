@@ -19,9 +19,9 @@
     {% endifnotequal %}
     <div class="container" onmouseover="$(this).addClassName('hover')" onmouseout="$(this).removeClassName('hover')">              
       <a href="{{photo.uri}}" target="_blank" class="photo_link">
-        <img src="{{photo|image_url_by_layout:layout}}"/>        
-        <a href="{{photo.image_url}}" class="lightbox_link" rel="lightbox" title="{{photo.title}}"></a>                 
+        <img src="{{photo|image_url_by_layout:layout}}"/>                         
       </a> 
+      <a href="{{photo.image_url}}" class="lightbox_link" rel="lightbox" title="{{photo.title}}"></a>      
     </div>
     <div class="author"></div>        
   </td>

@@ -161,7 +161,6 @@ Lightbox.prototype = {
             )
         ]));
 
-
 		$('overlay').hide().observe('click', (function() { this.end(); }).bind(this));
 		$('lightbox').hide().observe('click', (function(event) { if (event.element().id == 'lightbox') this.end(); }).bind(this));
 		$('outerImageContainer').setStyle({ width: size, height: size });
@@ -170,6 +169,8 @@ Lightbox.prototype = {
 		$('loadingLink').observe('click', (function(event) { event.stop(); this.end(); }).bind(this));
 		$('bottomNavClose').observe('click', (function(event) { event.stop(); this.end(); }).bind(this));
 
+        $('imageContainer').observe('click', (function(event) { event.stop(); this.followLink() }).bind(this));
+        
         var th = this;
         (function(){
             var ids = 
@@ -179,6 +180,13 @@ Lightbox.prototype = {
         }).defer();
     },
 
+    followLink: function(){
+    	var link = this.imageArray[this.activeImage][2]
+    	                           
+    	if(link)
+    		window.open(link)
+    },
+    
     //
     // updateImageList()
     // Loops through anchor tags looking for 'lightbox' references and applies onclick
@@ -213,9 +221,9 @@ Lightbox.prototype = {
         this.imageArray = [];
         var imageNum = 0;       
 
-        if ((imageLink.rel == 'lightbox')){
+        if ((imageLink.rel == 'lightbox')){        	        	
             // if image is NOT part of a set, add single image to imageArray
-            this.imageArray.push([imageLink.href, imageLink.title]);         
+            this.imageArray.push([imageLink.href, imageLink.title, imageLink.previous().href]);         
         } else {
             // if image is part of a set..
             this.imageArray = 
@@ -239,8 +247,7 @@ Lightbox.prototype = {
     //  changeImage()
     //  Hide most elements and preload image in preparation for resizing image container.
     //
-    changeImage: function(imageNum) {   
-        
+    changeImage: function(imageNum) {           
         this.activeImage = imageNum; // update global var
 
         // hide elements during transition
