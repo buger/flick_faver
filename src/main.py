@@ -104,27 +104,27 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
     
     start_from_photo = None
     
-    photos = UserPhotoIndex.all(keys_only = True)    
-    photos.ancestor(current_user)
+    photo_keys = UserPhotoIndex.all(keys_only = True)    
+    photo_keys.ancestor(current_user)
     
     if difficulty == const.SkillLevelEasy:
-        photos.order('-skill_changed_date')
+        photo_keys.order('-skill_changed_date')
     else:
-        photos.order('-created')
+        photo_keys.order('-created')
     
     if start_from:                        
         start_from_photo = UserPhotoIndex.get_by_key_name(start_from, current_user)
         
         if difficulty == const.SkillLevelEasy:
-            photos.filter('skill_changed_date < ', start_from_photo.skill_changed_date)
+            photo_keys.filter('skill_changed_date < ', start_from_photo.skill_changed_date)
         else:
-            photos.filter('created < ', start_from_photo.created)
+            photo_keys.filter('created < ', start_from_photo.created)
         
-        photos = photos.fetch(photos_per_load)
+        photo_keys = photo_keys.fetch(photos_per_load)
     else:
-        photos = photos.fetch(photos_per_load, offset)
+        photo_keys = photo_keys.fetch(photos_per_load, offset)
 
-    photos = [Photo.get_by_key_name(photo_index_key.name()) for photo_index_key in photos]
+    photos = [Photo.get_by_key_name(photo_key.name()) for photo_key in photo_keys]
     
     # in groups of 3
     photos_groups = [itertools.islice(photos, i*photos_in_group, (i+1)*photos_in_group, 1) for i in range(photos_per_load/photos_in_group)]          
@@ -132,10 +132,12 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
     if len(photos) == 0:
         last_date = None
     else:
+        last_photo = UserPhotoIndex.get(photo_keys[0])
+        
         if difficulty == const.SkillLevelEasy:
-            last_date = photos[0].skill_changed_date
+            last_date = last_photo.skill_changed_date
         else:
-            last_date = photos[0].created
+            last_date = last_photo.created
         
     return (photos_groups, start_from_photo, last_date)
         
@@ -221,15 +223,14 @@ class AuthCallbackHandler(webapp.RequestHandler):
                         token    = user_info.token,     
                         status   = const.UserRegistred,                      
                         last_login = datetime.datetime.now())
-            
-        user.status = const.UserRegistred
-         
+                     
         task = None
         
         if not user.is_saved() or user.status == const.UserUnRegistred:
             task = taskqueue.Task(url="/task/user/update_contacts", 
                                   params={'key':user.key(), 'update_favorites':True, 'initial_update': True})                           
         
+        user.status = const.UserRegistred
         user.username = user_info.username
         user.fullname = user.fullname
         user.token = user_info.token
@@ -241,7 +242,7 @@ class AuthCallbackHandler(webapp.RequestHandler):
             user.put()
         
         if task:
-            task.add("update-contacts")
+            task.add("non-blocking")
         
         session["username"]   = user.username
         

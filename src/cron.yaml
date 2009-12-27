@@ -1,7 +1,7 @@
 cron:
 - description: Update active users
   url: /task/update_favorites_cron/active
-  schedule: every 12 hours
+  schedule: every 6 hours
   timezone: Europe/Moscow
   
 - description: Update inactive users

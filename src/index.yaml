@@ -21,3 +21,9 @@ indexes:
   properties:
   - name: status
   - name: last_login
+  
+- kind: Photo
+  properties:
+  - name: skill_changed_week
+  - name: favorited_count
+    direction: desc

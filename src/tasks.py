@@ -22,7 +22,7 @@ class UpdateContactsHandler(webapp.RequestHandler):
         user_key = self.request.get('key')        
         user     = User.get(user_key)
         
-        if self.request.get('initial_update'):
+        if self.request.get('initial_update') is not None:
             initial_update = True
             countdown = 0
         else:
@@ -83,14 +83,16 @@ class UpdateContactsHandler(webapp.RequestHandler):
                                                       'initial_update': initial_update})
                     
                         tasks.append(task)                                                            
-                                        
-            db.put(objects_to_put)                    
-
-
+            
+            db.put(objects_to_put)
+            
             for task in tasks:
-                task.add('update-photos')
+                if self.request.get('initial_update') is None:
+                    task.add('update-photos')
+                else:
+                    task.add('non-blocking')
                                                                     
-            if page <= max_pages and len(objects_to_put) != 0:
+            if page <= max_pages:
                 page = page + 1
 
                 taskqueue.Task(url="/task/user/update_contacts",
@@ -101,6 +103,10 @@ class UpdateContactsHandler(webapp.RequestHandler):
         else:
             self.response.out.write("Unknown user")
             logging.error("Can't update contacts. Unknown user %s" % user_key)
+            
+            
+    def get(self):
+        self.post()
 
 
 class UpdateFavesHandler(webapp.RequestHandler):
@@ -253,7 +259,7 @@ class UpdateContactFavoritesHandler(webapp.RequestHandler):
             
         contacts.order("__key__")
         contacts = contacts.fetch(10)
-
+        
         for user_contact in contacts:
             taskqueue.Task(url="/task/user/update_favorites", 
                            params={"key": db.Key.from_path('User',user_contact.contact)}).add("update-photos")
@@ -280,18 +286,20 @@ class UpdateFavoritesCronHandler(webapp.RequestHandler):
         twenty_four_hours_ago = datetime.datetime.now()-datetime.timedelta(hours=24)
             
         if (active_status == 'active'):
+            countdown = 0
             user.filter("last_login >", twenty_four_hours_ago)
         else:
+            countdown = 1000
             user.filter("last_login <", twenty_four_hours_ago)        
                 
         user = user.get() 
         
         if user is not None:                                        
             taskqueue.Task(url="/task/user/update_contact_favorites", 
-                           params={"key":user.key()}).add("update-photos")
+                           params={"key":user.key()}, countdown=countdown).add("update-photos")
             
             taskqueue.Task(url="/task/update_favorites_cron/%s" % active_status, 
-                           params={"start_from":user.key()}).add("default")
+                           params={"start_from":user.key()}, countdown=countdown).add("default")
                 
     def post(self, active_status):
         self.get(active_status)                                                 

@@ -34,24 +34,27 @@ class User(db.Model):
     def nsid(self):
         return self.key().name()
     
-    def update_subscribers(self, travel_in_time = None):
+    def update_subscribers(self, initial_update = None):
         subscribers = UserContact.all()
                 
         subscribers.filter("contact", self.key().name())
         subscribers = subscribers.fetch(20)
         
         for subscriber in subscribers:
-            self.update_subscriber(subscriber.user, travel_in_time)
+            self.update_subscriber(subscriber.user, initial_update)
                
-    def update_subscriber(self, subscriber, travel_in_time = None):
+    def update_subscriber(self, subscriber, initial_update = None):
         task = taskqueue.Task(url="/task/user/update_subscriber_index",                              
                               params={'key': self.key(), 
                                       'subscriber': db.Key.from_path('User', subscriber),
-                                      'travel_in_time': travel_in_time}, 
+                                      'initial_update': initial_update}, 
                               method = 'POST')
-                
-        task.add("update-subscriber-index")   
         
+        if initial_update is None:
+            task.add("update-photos")
+        else:   
+            task.add("non-blocking")
+                        
     @classmethod
     def new_from_xml(cls, user_xml):
         nsid = user_xml.getAttribute('nsid')        

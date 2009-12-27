@@ -43,6 +43,14 @@ class Photo(db.Expando):
     def uri(self):
         return "%s/%s" % (self.author_uri, self.photo_id)
     
+    def image_url_by_layout(self, layout):
+        if layout == const.LayoutBig:
+            return self.image_url
+        elif layout == const.LayoutMedium:
+            return self.image_m_url
+        elif layout == const.LayoutSmall:
+            return self.image_s_url      
+    
     @property
     def image_m_url(self):
         return self.image_url.replace('.jpg','_m.jpg')

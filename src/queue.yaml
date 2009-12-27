@@ -1,19 +1,15 @@
 queue:
+- name: non-blocking
+  rate: 10/s
+  bucket_size: 10
+  
 - name: update-photos
   rate: 1/s
   bucket_size: 5
-  
-- name: update-subscriber-index
-  rate: 5/s
-  bucket_size: 5  
 
 - name: update-contacts
-  rate: 1/s
+  rate: 2/s
   bucket_size: 3
- 
-- name: non-blocking
-  rate: 1/s
-  bucket_size: 2
 
 - name: update-rss
   rate: 30/m
