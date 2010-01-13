@@ -8,6 +8,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
 from google.appengine.api.labs import taskqueue
 from google.appengine.ext import db
+from google.appengine.ext import deferred
 
 
 import flickr
@@ -15,6 +16,7 @@ import const
 
 from models.user import *
 from models.photo import *
+from models.subscription import *
 
 
 class UpdateContactsHandler(webapp.RequestHandler):
@@ -284,13 +286,15 @@ class UpdateFavoritesCronHandler(webapp.RequestHandler):
             user.filter("last_login >", start_from.last_login)
                 
         twenty_four_hours_ago = datetime.datetime.now()-datetime.timedelta(hours=24)
+        week_ago = datetime.datetime.now()-datetime.timedelta(weeks=1)
             
         if (active_status == 'active'):
             countdown = 0
             user.filter("last_login >", twenty_four_hours_ago)
         else:
             countdown = 1000
-            user.filter("last_login <", twenty_four_hours_ago)        
+            user.filter("last_login <", twenty_four_hours_ago)
+            user.filter("last_login >", week_ago)        
                 
         user = user.get() 
         
@@ -327,84 +331,13 @@ class UpdateContactsCronHandler(webapp.RequestHandler):
         self.get()
 
 
-class UpdateRSSCronHandler(webapp.RequestHandler):
+class UpdateSubscriptionHandler(webapp.RequestHandler):
     def get(self):
-        users = db.GqlQuery("SELECT __key__ FROM User")
+        subscriptions = Subscription.all().fetch(100)
         
-        for key in users:
-            taskqueue.Task(url="/task/update_rss", params={"user":key}, method = 'GET').add("update-rss")
+        for subscription in subscriptions:
+            deferred.defer(subscription.update) 
 
-
-class UpdateRSSHandler(webapp.RequestHandler):       
-    def get(self):
-        user = User.get(db.Key(self.request.get('user')))
-        
-        feed = RSSFeed.get_or_insert("r%s" % user.userid)
-            
-        photos = Photo.all()
-        photos.ancestor(user)
-        
-        if feed.last_photo:
-            photos.order("created")            
-            last_photo = Photo.get(db.Key(feed.last_photo))
-            
-            photos.filter("created >" ,last_photo.created)
-        else:
-            photos.order("-created")                    
-
-        photos = photos.fetch(90)
-    
-        if feed.last_photo:
-            photos.reverse()        
-     
-        posts = []
-        
-        if len(photos) > 5:
-            # in groups of 30
-            groups_of_30 = [itertools.islice(photos, i*30, (i+1)*30, 1) for i in range(3)]
-            
-            for group in groups_of_30:
-                group = list(group)
-                                            
-                if len(group) != 0:
-                    groups_of_3 = [itertools.islice(group, i*3, (i+1)*3, 1) for i in range(10)]                    
-                    
-                    content = template.render("templates/_rss_post.html", {'groups_of_3':groups_of_3})
-                    content = unicode(content, 'utf-8', errors='ignore')
-                                    
-                    post = FeedPost(parent = feed, content=content)
-                    posts.append(post)                                  
-          
-            feed.last_photo = str(photos[0].key())
-            feed.put()
-            
-            if feed.last_photo and len(photos) == 90:
-                taskqueue.Task(url="/task/update_rss", params={"user":self.request.get('user')}, method = 'GET').add("update-rss")
-            
-        posts.reverse()
-        
-        db.put(posts)
-
-class ClearDatabaseHandler(webapp.RequestHandler):
-    def get(self):
-        items_for_delete = User.all(keys_only = True).fetch(100)
-        
-        if len(items_for_delete) == 0:
-            items_for_delete = Photo.all(keys_only = True).fetch(100)
-            
-        if len(items_for_delete) == 0:
-            items_for_delete = UserContact.all(keys_only = True).fetch(100)
-                        
-        if len(items_for_delete) == 0:
-            items_for_delete = PhotoIndex.all(keys_only = True).fetch(100)
-                
-        if len(items_for_delete) == 0:
-            items_for_delete = UserPhotoIndex.all(keys_only = True).fetch(100)                                        
-        
-        if len(items_for_delete) != 0:
-            db.delete(items_for_delete)        
-                
-            taskqueue.Task(url="/task/clear_database", method = 'GET').add("non-blocking")
 
 application = webapp.WSGIApplication([
    ('/task/user/update_contacts', UpdateContactsHandler),
@@ -416,10 +349,7 @@ application = webapp.WSGIApplication([
    ('/task/user/update_contact_favorites', UpdateContactFavoritesHandler),
    ('/task/update_favorites_cron/([^\/]*)', UpdateFavoritesCronHandler),      
    
-   ('/task/update_rss', UpdateRSSHandler),
-   ('/task/update_rss_cron', UpdateRSSCronHandler),
-   
-   ('/task/clear_database', ClearDatabaseHandler)
+   ('/task/update_subscriptions', UpdateSubscriptionHandler)   
    ], debug=True)
 
             

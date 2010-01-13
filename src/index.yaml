@@ -3,7 +3,12 @@ indexes:
   ancestor: yes
   properties:
   - name: created
-    direction: desc              
+    direction: desc   
+    
+- kind: UserPhotoIndex
+  ancestor: yes
+  properties:
+  - name: created                
     
 - kind: UserPhotoIndex
   ancestor: yes
@@ -27,3 +32,14 @@ indexes:
   - name: skill_changed_week
   - name: favorited_count
     direction: desc
+    
+- kind: Post
+  ancestor: yes
+  properties:
+  - name: updated_at
+    direction: desc
+    
+- kind: Post
+  ancestor: yes
+  properties:
+  - name: updated_at

@@ -20,6 +20,7 @@ from appengine_utilities.sessions import Session
 
 from models.user import User
 from models.photo import *
+from models.subscription import *
 
 from config import *
 import utils
@@ -267,9 +268,6 @@ class LogoutHandler(webapp.RequestHandler):
  
 class RSSHandler(webapp.RequestHandler):                 
     def get(self, userid):
-        self.response.set_status(304)
-        return True
-                
         HTTP_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
         
         userid = urllib.unquote_plus(urllib.unquote(userid))
@@ -278,40 +276,33 @@ class RSSHandler(webapp.RequestHandler):
         
         if user is None:
             self.error(404)
-        else:   
-            feed = RSSFeed.get_or_insert(user.userid)
+        else:                           
+            subscription = Subscription.get_by_key_name(userid, user)
             
-            serve = True
-            
-            if 'If-Modified-Since' in self.request.headers:
-              last_seen = datetime.datetime.strptime(
-                  self.request.headers['If-Modified-Since'],
-                  HTTP_DATE_FMT)
-              if last_seen >= feed.updated_at.replace(microsecond=0):
-                serve = False
+            if subscription is None:
+                subscription = Subscription(parent = user, 
+                                            key_name = userid, 
+                                            subscription_type = 0)
+                subscription.put()
                 
-            if 'If-None-Match' in self.request.headers:
-              etags = [x.strip('" ')
-                       for x in self.request.headers['If-None-Match'].split(',')]
-              if feed.etag in etags:
-                serve = False
+                content = template.render("templates/_rss_welcome_post.html", {'user': user})
+                welcome_post = Post(parent = subscription, content = content)
+                welcome_post.put()
                 
             self.response.headers['Content-Type'] = 'application/atom+xml; charset=utf-8'
                     
-            last_modified = feed.updated_at.strftime(HTTP_DATE_FMT)
-            
-            self.response.headers['Last-Modified'] = last_modified
-            self.response.headers['ETag'] = '"%s"' % feed.etag
+            #if subscription.updated_at:
+            #    last_modified = subscription.updated_at.strftime(HTTP_DATE_FMT)            
+            #    self.response.headers['Last-Modified'] = last_modified
+                
+            #self.response.headers['ETag'] = '"%s"' % subscription.etag
                             
-            posts = FeedPost.all().ancestor(feed).order("-created_at").fetch(5)
-            
-            feed_content = template.render("templates/atom.xml", {'user':user, 'posts':posts})
     
-            if serve:
-              self.response.out.write(feed_content)
-            else:
-              self.response.set_status(304)        
-            
+            posts = Post.all().ancestor(subscription).order("-updated_at").fetch(5)
+        
+            feed_content = template.render("templates/atom.xml", {'user':user, 'posts':posts})
+                
+            self.response.out.write(feed_content)            
             
  
 application = webapp.WSGIApplication([

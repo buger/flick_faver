@@ -13,4 +13,12 @@ cron:
   url: /task/update_contacts_cron
   schedule: every 24 hours
   timezone: Europe/Moscow    
+
+
+- description: Update subscriptions
+  url: /task/update_subscriptions
+  schedule: every 1 hours
+  timezone: Europe/Moscow
+  
+
   
