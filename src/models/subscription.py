@@ -26,12 +26,16 @@ class Subscription(db.Model):
                                         
         photo_keys = UserPhotoIndex.all(keys_only = True)        
         photo_keys.ancestor(self.parent())
-        photo_keys.order("created")
         
         if self.updated_at:        
+            photo_keys.order("created")
             photo_keys.filter("created >", self.updated_at)
+            photo_keys = photo_keys.fetch(60)
+        else:
+            photo_keys.order("-created")
+            photo_keys = photo_keys.fetch(60)
+            photo_keys.reverse()
                             
-        photo_keys = photo_keys.fetch(60)
         
         def _tnx(item):
             db.put(item)                      
@@ -45,6 +49,7 @@ class Subscription(db.Model):
         
         for group in groups_of_30:
             group = list(group)
+            group.reverse()
             
             if len(group) != 0:
                 groups_of_3 = [itertools.islice(group, i*3, (i+1)*3, 1) for i in range(10)]                    
