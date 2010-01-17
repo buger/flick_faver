@@ -138,7 +138,8 @@ Lightbox.prototype = {
                     Builder.node('div',{id:'hoverNav'}, [
                         Builder.node('a',{id:'prevLink', href: '#' }),
                         Builder.node('a',{id:'nextLink', href: '#' }),
-                        Builder.node('a',{id:'resizeBig', title:'Get bigger version', href: '#' })
+                        Builder.node('a',{id:'resizeBig', title:'Get bigger version', href: '#' }),
+                        Builder.node('a',{id:'favoriteButton', href: '#' })
                     ]),
                     Builder.node('div',{id:'loading'}, 
                         Builder.node('a',{id:'loadingLink', href: '#' }, 
@@ -173,6 +174,8 @@ Lightbox.prototype = {
 		$('resizeBig').observe('click', (function(event) { event.stop(); this.resizeBig() }).bind(this));
         $('imageContainer').observe('click', (function(event) { event.stop(); this.followLink() }).bind(this));
         
+        $('favoriteButton').observe('click', (function(event){event.stop(); this.changeFavoriteStatus()}).bind(this))
+        
         var th = this;
         (function(){
             var ids = 
@@ -190,6 +193,44 @@ Lightbox.prototype = {
     	setTimeout(function(){
     		new Effect.Fade('userMessage', { duration: 1, from: 1.0, to: 0.0 })	
     	}, 3000)
+    },
+    
+    updateFavoriteStatus: function(msg){
+    	var image_id = this.imageArray[this.activeImage][2].gsub(/.*\//,'')
+    	
+    	new Ajax.Request('/favorite_status/'+image_id, {
+    		onSuccess: function(response){
+    			if(response.responseText == "1")
+    				this.lightbox.addClassName('favorite')    				
+    		}.bind(this),
+    		onFailure: function(){
+    		}.bind(this)
+    	})
+    },
+    
+    changeFavoriteStatus: function(){
+    	var active_image = this.imageArray[this.activeImage];
+    	var image_id = active_image[2].gsub(/.*\//,'')
+    	
+    	var action = this.lightbox.hasClassName('favorite') ? "remove" : "add"
+    		
+    	this.loading.show();
+    	
+    	new Ajax.Request('/favorites/'+action+'/'+image_id, {
+    		onSuccess: function(response){
+    			if(response.responseText == "success"){
+    				this.lightbox.toggleClassName('favorite');
+    			} else {
+    				this.showUserMessage(response.responseText);
+    			}
+    			this.loading.hide();
+    		}.bind(this),
+    		onFailure: function(response){
+    			//this.showUserMessage(response.responseText);
+    			
+    			this.loading.hide();
+    		}.bind(this)
+    	})    		
     },
     
     resizeBig: function(){
@@ -216,21 +257,17 @@ Lightbox.prototype = {
 				        					            
 				            var width  = imgPreloader.width;
 				            var height = imgPreloader.height;
-				           
-				            console.log(width+"x"+height)
 				            
-				            if(width > 1000){
-				            	height = 1000*height/width
-				            	width  = 1000
+				            if(width > 900){
+				            	height = 900*height/width
+				            	width  = 900
 				            }
 				            
-				            if(height > 800){
-				            	width  = 800*width/height
-				            	height = 800
+				            if(height > 700){
+				            	width  = 700*width/height
+				            	height = 700
 				            }
 				            
-				            console.log(width+"x"+height)
-				            				            
 				            var arrayPageScroll = document.viewport.getScrollOffsets();
 				            var lightboxTop = arrayPageScroll[1] + (document.viewport.getHeight() / 10);
 				            var lightboxLeft = arrayPageScroll[0];
@@ -260,9 +297,7 @@ Lightbox.prototype = {
     				this.loading.hide();
     				$('resizeBig').show();
     				
-    				this.showUserMessage('This is the biggest available image');
-    				
-    				console.log('failure')
+    				this.showUserMessage('This is the biggest available image');    				
     			}.bind(this)
     		})
     	}
@@ -299,6 +334,8 @@ Lightbox.prototype = {
     //  Display overlay and lightbox. If image is part of a set, add siblings to imageArray.
     //
     start: function(imageLink) {
+    	this.lightbox.removeClassName('favorite')
+    	
     	$('resizeBig').show();
     	
         this.lightboxImage.style.width = 'auto';
@@ -317,7 +354,7 @@ Lightbox.prototype = {
 
         if ((imageLink.rel == 'lightbox')){        	        	
             // if image is NOT part of a set, add single image to imageArray
-        	var image_url = imageLink.down('img').src.gsub(/_m\.jpg/,'.jpg');
+        	var image_url = imageLink.down('img').src.gsub(/_m\.jpg/,'.jpg');                	        	        	
         	
             this.imageArray.push([image_url, imageLink.title, imageLink.href]);         
         } else {
@@ -345,6 +382,8 @@ Lightbox.prototype = {
     //
     changeImage: function(imageNum) {           
         this.activeImage = imageNum; // update global var
+        
+        this.updateFavoriteStatus();
 
         // hide elements during transition
         if (LightboxOptions.animate) this.loading.show();

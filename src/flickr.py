@@ -17,10 +17,10 @@ FLICKR_API_KEY = 'e5504def2a46e4a654ace751ab1cca88'
 FLICKR_SECRET = 'ff8a88e4c4dd7cec'
 #FLICKR_SECRET = '567ec3c72f27c571'
 
-FLICKR_SIG = '92de0d7a6e1e47839448060a372ceff1' # ff8a88e4c4dd7cecapi_keye5504def2a46e4a654ace751ab1cca88permsread
+FLICKR_SIG = '18b46b4ceb730cbaac5a8de4d2d81712' # ff8a88e4c4dd7cecapi_keye5504def2a46e4a654ace751ab1cca88permswrite
 #FLICKR_SIG = '47a4dad57755a116205701c76030215c'
 
-FLICKR_AUTH_URL = "http://flickr.com/services/auth/?api_key=%s&perms=read&api_sig=%s" % (FLICKR_API_KEY, FLICKR_SIG)
+FLICKR_AUTH_URL = "http://flickr.com/services/auth/?api_key=%s&perms=write&api_sig=%s" % (FLICKR_API_KEY, FLICKR_SIG)
 
 class FlickrUserInfo:
     def __init__(self, auth_token, userid, username, fullname):
@@ -195,6 +195,27 @@ def original_image_url(photo_id):
     
     return None
     
+def favorite(photo_id, token):
+    result = call_method('flickr.favorites.add', {'photo_id':photo_id}, token)
+    
+    if result.getElementsByTagName('rsp')[0].getAttribute('stat') == 'ok':
+        return "success"
+    else:
+        error = result.getElementsByTagName('err')[0]
+        
+        if error.getAttribute('code') == '3':
+            return "success"
+        else:
+            return error.getAttribute('msg')
+    
+def remove_favorite(photo_id, token):
+    result = call_method('flickr.favorites.remove', {'photo_id':photo_id}, token)
+    
+    if result.getElementsByTagName('rsp')[0].getAttribute('stat') == 'ok':
+        return "success"
+    else:
+        return result.getElementsByTagName('err')[0].getAttribute('msg')
+        
 
 USER_URL_FORMAT = "http://www.flickr.com/photos/%s" 
 

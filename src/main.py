@@ -146,7 +146,40 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
 class OriginalImageHandler(webapp.RequestHandler):
     def post(self, photo_id):
         self.response.out.write(flickr.original_image_url(photo_id))
+        
+class FavoriteStatusHandler(webapp.RequestHandler):
+    def post(self, photo_id):
+        session = Session()
+         
+        photo = UserPhotoIndex.get_by_key_name(photo_id, db.Key.from_path('User', session['nsid']))
+                
+        self.response.out.write(photo.favorite)        
  
+ 
+class FavoriteImageHandler(webapp.RequestHandler):
+    def post(self, action, photo_id):
+        session = Session()
+         
+        photo = UserPhotoIndex.get_by_key_name(photo_id, db.Key.from_path('User', session['nsid']))
+         
+        if action == "add":
+            result = flickr.favorite(photo_id, session["auth_token"])
+             
+            if result == "success":
+                photo.favorite = 1
+                db.put(photo)
+             
+            self.response.out.write(result)
+             
+        elif action == "remove":
+            result = flickr.remove_favorite(photo_id, session["auth_token"])
+            
+            if result == "success":
+                photo.favorite = 0
+                db.put(photo) 
+                      
+            self.response.out.write(result)
+            
 class MainHandler(webapp.RequestHandler):
     def get(self):
         photos = Photo.all().order("-skill_changed_date")
@@ -239,6 +272,9 @@ class AuthCallbackHandler(webapp.RequestHandler):
         user.username = user_info.username
         user.fullname = user.fullname
         user.token = user_info.token
+        
+        if os.environ.get('SERVER_SOFTWARE') == 'Development/1.0':
+            user.token = '72157623100491721-4ab7039d8e6b4615' 
         #user.token = '72157622500427269-7131c791b2204f16'
         user.last_login = datetime.datetime.now()
         
@@ -315,10 +351,12 @@ application = webapp.WSGIApplication([
    ('/dashboard', UserHandler),
    ('/photos/([^\/]*)', LoadPhotosHandler),
    ('/original_image/([^\/]*)', OriginalImageHandler),
+   ('/favorite_status/([^\/]*)', FavoriteStatusHandler),
+   ('/favorites/([^\/]*)/([^\/]*)', FavoriteImageHandler),
    ('/login', LoginHandler),
    ('/logout', LogoutHandler),
    ('/auth_callback', AuthCallbackHandler),
-   ('/feed/([^\/]*)', RSSHandler)   
+   ('/(?:feed|user)/([^\/]*)', RSSHandler)   
    ], debug=True)
                 
 def main():
