@@ -182,8 +182,19 @@ Lightbox.prototype = {
         }).defer();
     },
 
+    showUserMessage: function(msg){
+    	$('userMessage').innerHTML = msg;
+    	//$('userMessage').show();
+    	new Effect.Appear('userMessage', { duration: 0.5, from: 0.0, to: 1.0 })
+    	
+    	setTimeout(function(){
+    		new Effect.Fade('userMessage', { duration: 1, from: 1.0, to: 0.0 })	
+    	}, 3000)
+    },
+    
     resizeBig: function(){
     	this.loading.show();
+    	$('resizeBig').hide();
     	
     	var active_image = this.imageArray[this.activeImage];
     	
@@ -196,6 +207,8 @@ Lightbox.prototype = {
 					var original_image = response.responseText;
     			
     				if(!original_image.blank()){
+    					
+    				
 				       var imgPreloader = new Image();
 				        
 				        imgPreloader.onload = (function(){				        					        	
@@ -238,12 +251,16 @@ Lightbox.prototype = {
 				        }).bind(this);
 				        imgPreloader.src = original_image;
     				}else{
-    					this.loading.hide()
+    					this.loading.hide();
+    					this.showUserMessage('This is the biggest available image');
     				}
     			}.bind(this),
     			
     			onFailure: function(){
     				this.loading.hide();
+    				$('resizeBig').show();
+    				
+    				this.showUserMessage('This is the biggest available image');
     				
     				console.log('failure')
     			}.bind(this)
@@ -281,7 +298,9 @@ Lightbox.prototype = {
     //  start()
     //  Display overlay and lightbox. If image is part of a set, add siblings to imageArray.
     //
-    start: function(imageLink) {       	
+    start: function(imageLink) {
+    	$('resizeBig').show();
+    	
         this.lightboxImage.style.width = 'auto';
         this.lightboxImage.style.height = 'auto';
         
@@ -521,6 +540,7 @@ Lightbox.prototype = {
     end: function() {
         this.disableKeyboardNav();
         this.lightbox.hide();
+        $('userMessage').hide();
         new Effect.Fade(this.overlay, { duration: this.overlayDuration });
         $$('select', 'object', 'embed').each(function(node){ node.style.visibility = 'visible' });
     },

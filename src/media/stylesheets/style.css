@@ -283,3 +283,24 @@ label.left {
  .iPhoneCheckHandle {
  	width: 60px; 	
  }
+ 
+ #userMessage {
+ 	position: fixed;
+ 	z-index: 9999;
+ 	top: -5px;
+ 	padding-top: 10px;
+ 	
+ 	margin-left: 30%;
+ 	
+ 	text-align: center;
+ 	width: 500px;
+ 	height: 20px;
+ 	
+ 	background: white;
+ 	
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	
+	font-size: 14px; 	
+ }
