@@ -145,7 +145,9 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
         
 class OriginalImageHandler(webapp.RequestHandler):
     def post(self, photo_id):
-        self.response.out.write(flickr.original_image_url(photo_id))
+        session = Session()
+        
+        self.response.out.write(flickr.original_image_url(photo_id, session['auth_token']))
         
 class FavoriteStatusHandler(webapp.RequestHandler):
     def post(self, photo_id):

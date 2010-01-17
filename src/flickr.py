@@ -186,8 +186,8 @@ PHOTO_URL_FORMAT = "http://www.flickr.com/photos/%s/%s"
 def photo_uri(user, photo_id):
     return "http://www.flickr.com/photos/%s/%s" % (user, photo_id)
 
-def original_image_url(photo_id):
-    result = call_method('flickr.photos.getSizes', {'photo_id':photo_id})
+def original_image_url(photo_id, token):
+    result = call_method('flickr.photos.getSizes', {'photo_id':photo_id}, token)
     
     for size in result.getElementsByTagName('size'):        
         if size.getAttribute('label') == 'Original' or size.getAttribute('label') == 'Large':
