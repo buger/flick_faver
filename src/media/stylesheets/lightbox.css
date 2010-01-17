@@ -33,7 +33,7 @@
 #imageData #imageDetails{float: left; text-align: left; padding-top: 6px; margin-right: 10px;}	
 #imageData #caption{ font-weight: bold;	}
 #imageData #numberDisplay{ display: block; clear: left; padding-bottom: 1.0em;	}			
-#imageData #bottomNavClose{ width: 30px; float: right;  padding-bottom: 0.7em; outline: none;}	 	
+#imageData #bottomNavClose{ width: 66px; float: right;  padding-bottom: 0.7em; outline: none;}	 	
 
 #imageData #sendTo {float: left; text-align: left; font-size: 12px; font-family: Arial; color: #000; padding-top: 5px;}
 

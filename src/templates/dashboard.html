@@ -21,33 +21,27 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/lightbox.css">  
   </head>
   <body>    
-    <a id="twitter" href="http://twitter.com/flickfaver" title="Follow on twitter"><img src="/images/twitter_white.gif"/></a>
-        
     <div id="userMessage" style="display: none"></div>
     
-    <div class="header">           
-      <div class="greeting">                        
-        <div class="hello">{{username}}</div>
-        <div class="relative">
-          <a href="logout" title="Logout" class="logout">logout</a> 
-        </div>
-      </div>
-      <div class="difficulty">
-        <div style="font-size: 18px; margin-bottom: 5px;">Difficulty</div>        
-        <input type="checkbox" class="skill_checkbox" id="skill_checkbox" {% ifequal difficulty 1 %}checked="checked"{% endifequal %} title="Change difficulty"/>
-      </div>
-      <div class="layouts" id="layouts" title="Change layout of page">
-        <div class="relative">
-          <div class="l_500 {% ifequal layout '500' %} active {% endifequal %}">
-            &nbsp;
-          </div>          
-          <div class="l_501 active">
-            &nbsp;            
-          </div>
-          <div class="l_502 {% ifequal layout '502' %} active {% endifequal %}">
-            &nbsp;
-          </div>          
-        </div>
+    <div class="header relative">                                               
+      <a class="a2a_dd" href="http://www.addtoany.com/subscribe?linkname=Flickfaver&amp;linkurl=http%3A%2F%2Fflickfaver.com/user/{{nsid}}"><img src="http://static.addtoany.com/buttons/subscribe_16_16.gif" width="16" height="16" border="0" alt="Subscribe"/></a>        
+      <span style="margin-left: 10px">Hello {{username}}</span>                        
+      <a href="logout" title="Logout" class="logout">(logout)</a>
+
+      <div class="relative settings_container" style="display: inline; margin-left: 20px" 
+           onmouseover="$(this).addClassName('hover')" 
+           onmouseout="$(this).removeClassName('hover')">
+        <span>Settings</span>                
+        <ul class="settings">
+          <li>
+            <input type="checkbox" id="skill_checkbox" class="skill_checkbox" {% ifequal difficulty 100 %}checked="checked"{% endifequal %} title="Change difficulty" onchange="document.fire('difficulty:changed', this.checked)"/>
+            <label for="skill_checkbox">Show if favorited by two or more contacts</label>
+          </li>
+          <li style="margin-top: 10px">
+            <input type="checkbox" id="large_images" class="large_images" {% ifequal large_images 1 %}checked="checked"{% endifequal %} title="Always try to open large image"/>
+            <label for="large_images">Always try to open large image</label>
+          </li>          
+        </ul>                
       </div>
     </div>        
     <div id="container">
@@ -57,11 +51,8 @@
         <div id="loader" style="display: none"><span>Wait a second, loading photos...</span></div>
       </div>  
     </div>
-    <script type="text/javascript">
-    document.observe("dom:loaded", function() {
-      new iPhoneStyle('.skill_checkbox', {checkedLabel:'Easy', uncheckedLabel:'Hard', resizeHandle: false, resizeContainer:false});
-    })
-    </script>
+    <script type="text/javascript">a2a_linkname="Flickfaver";a2a_linkurl="http://flickfaver.com/user/{{nsid}}";</script>
+    <script type="text/javascript" src="http://static.addtoany.com/menu/feed.js"></script>    
     <script type="text/javascript">
     var uservoiceJsHost = ("https:" == document.location.protocol) ? "https://uservoice.com" : "http://cdn.uservoice.com";
     document.write(unescape("%3Cscript src='" + uservoiceJsHost + "/javascripts/widgets/tab.js' type='text/javascript'%3E%3C/script%3E"))

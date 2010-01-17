@@ -47,7 +47,7 @@
 //
 LightboxOptions = Object.extend({
     fileLoadingImage:        '/images/lightbox/loading.gif',     
-    fileBottomNavCloseImage: '/images/lightbox/close.gif',
+    fileBottomNavCloseImage: '/images/lightbox/closelabel.gif',
 
     overlayOpacity: 0.95,   // controls transparency of shadow overlay
 
@@ -288,10 +288,8 @@ Lightbox.prototype = {
     			onSuccess: function(response){    		
 					var original_image = response.responseText;
     			
-    				if(!original_image.blank()){
-    					
-    				
-				       var imgPreloader = new Image();
+    				if(!original_image.blank()){    					    				
+				        var imgPreloader = new Image();
 				        
 				        imgPreloader.onload = (function(){				        					        	
 				        	this.loading.hide();
@@ -329,16 +327,24 @@ Lightbox.prototype = {
 				        }).bind(this);
 				        imgPreloader.src = original_image;
     				}else{
-    					this.loading.hide();
-    					this.showUserMessage('This is the biggest available image');
+    					if($('large_images').checked){
+    						this.loadImage();
+    					}else{
+        					this.loading.hide();
+        					this.showUserMessage('This is the biggest available image');        					    						
+    					}
     				}
     			}.bind(this),
     			
     			onFailure: function(){
-    				this.loading.hide();
-    				$('resizeBig').show();
-    				
-    				this.showUserMessage('This is the biggest available image');    				
+    				if($('large_images').checked){
+						this.loadImage();
+    				} else {
+        				this.loading.hide();
+        				$('resizeBig').show();
+        				    					
+    					this.showUserMessage('This is the biggest available image');
+    				}    				    				    			
     			}.bind(this)
     		})
     	}
@@ -436,16 +442,22 @@ Lightbox.prototype = {
         this.imageDataContainer.setStyle({opacity: .0001});
         this.numberDisplay.hide();      
         
+        
+        if($('large_images').checked){
+        	this.resizeBig();
+        } else {	        
+        	this.loadImage();
+        }
+    },
+    
+    loadImage: function(){
         var imgPreloader = new Image();
         
-        // once image is preloaded, resize image container
-
-
         imgPreloader.onload = (function(){
             this.lightboxImage.src = this.imageArray[this.activeImage][0];
-            this.resizeImageContainer(imgPreloader.width, imgPreloader.height);
+            this.resizeImageContainer(imgPreloader.width, imgPreloader.height);                        
         }).bind(this);
-        imgPreloader.src = this.imageArray[this.activeImage][0];
+        imgPreloader.src = this.imageArray[this.activeImage][0];    	
     },
 
     //

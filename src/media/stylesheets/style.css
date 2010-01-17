@@ -40,53 +40,59 @@ div#inner .slogan {
 
 .relative {
 	position: relative;
-	clear: both;
 }
 
 div.header {
-	color: #333;
-	height: 50px;
-	padding-top: 10px;
+	color: #fff;
+	height: 40px;
+	padding-top: 8px;
 	text-align: left;
 	padding-left: 20px;
+	font-size: 16px;	
+	background: url(/images/header_bg.png) top left repeat-x;
+}
+	
+	
+div.header .settings {
+	position: absolute;
+	border: 1px solid #666;
+	color: #333;
+	top: 22px;
+	font-size: 14px;
+	font-family: Verdana;
+	left: 0px;
+	width: 350px;
+	padding: 8px;
+	background: white;
+}
+	
+.settings_container span {
+	border: 1px solid #666;
+	padding-left: 5px;
+	padding-right: 25px;
+	padding-top: 3px;
+	padding-bottom: 3px;	
+	
+	background: url(/images/down.gif) center right no-repeat;
+	background-color: none;	 
+	
+	cursor: default;
+}	
+
+.header .settings {
+	display: none;
 }
 
-
-div.header div.greeting {
-	float: left;	
-}
-	div.header div.greeting .hello {
-		font-size: 1.7em;
-	}
-	
-	div.header div.greeting .rss {
-		text-decoration: none;
-		padding-left: 2px;
-	}
-	
-	div.header div.greeting .rss:hover {
-		text-decoration: underline;
-	}
-	
-	div.header div.greeting .logout {
-		padding-left: 2px;
-		font-size: 1em;
-		color: #666;		
-	}
-	
-	
-div.header .difficulty {
-	float: left;
-	width: 150px;
-	//width: 200px;  
-	margin-left: 70px;
+.header .hover .settings {
+	display: block;
 }
 
-div.header .slogan {
-	color: #888;
-	font-size: 1em;
-	margin-left: 30px;
-}
+div.header .logout {
+	padding-left: 2px;
+	font-size: 12px;
+	color: #666;		
+}	
+	
 
 a#blog_link {
 	position: absolute;
@@ -111,7 +117,7 @@ div.photos_big .photo {
 }
 
 div.photos .time_header td {
-	padding-top: 3em;
+	padding-top: 2em;
 	color: #999;
 	padding-bottom: 0.8em;
 }
@@ -167,49 +173,6 @@ div.photos td.photo .container .lightbox_link {
 
 div.photos td.photo .hover .lightbox_link {	
 	display: block;	
-}
-
-div.layouts {	
-	float: left;
-	margin-left: 70px;
-}
-
-div.layouts span {
-	font-size: 1em;
-	padding-left: 15px;
-}
-
-div.layouts .relative div {
-	float: left;
-	cursor: pointer;
-	border: 2px solid #ccc;	
-}
-
-/* big */
-div.layouts .l_500 { 
-	width: 50px;
-	height: 50px;
-}
-
-div.layouts .l_501 {
-	width: 30px;
-	height: 30px;
-	margin-left: 15px;
-	margin-top: 20px;
-}
-
-div.layouts .l_502 {
-	width: 10px;
-	height: 10px;
-	margin-left: 15px;
-	margin-top: 40px;
-	font-size: 1px;
-	line-height: 1px;
-}
-
-div.layouts .relative .active {
-	background: #eee;
-	border: 2px solid #666;
 }
 
 div#loader {

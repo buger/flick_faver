@@ -214,7 +214,7 @@ class LoadPhotosHandler(webapp.RequestHandler):
         
         if page_type == 'simple':
             difficulty = int(self.request.get('difficulty'))                                
-            layout = int(self.request.get('layout').replace('l_',''))
+            layout = int(self.request.get('layout'))
             
             #try:
             photos_groups, last_photo, first_date = get_photos(page = page, start_from = photo_key, difficulty = difficulty, layout = layout)

@@ -11,16 +11,12 @@ var EndlessPhotoScroller = Class.create({
 		this.page_type = page_type
 		this.loading = false	
 		
+		this.layout = '501'
+		
 		if($('skill_checkbox'))
 			this.difficulty = $('skill_checkbox').checked == true ? 100 : 101 
 		else
 			this.difficulty = 101
-		
-		if($('layouts'))	
-			var active_layout = $$('#layouts .active').first()
-			
-		if(active_layout)
-			this.layout = active_layout.className.gsub('active','')
 		
 		if(this.page_type == 'simple'){
 			this.container = $('photos_table')
@@ -90,7 +86,7 @@ var EndlessPhotoScroller = Class.create({
 			
 			params.set('page_type', this.page_type)
 			params.set('difficulty', this.difficulty)
-			params.set('layout', this.layout)
+			params.set('layout', this.layout)			
 										
 			if (this.last_photo_id)
 				params.set('last_photo_id', this.last_photo_id)						
@@ -170,22 +166,5 @@ document.observe("dom:loaded", function() {
 	}
 	
 	if(endless_scroller)
-		window.onscroll = endless_scroller.onScroll.bind(endless_scroller)
-		
-	if($('layouts')){
-		$('layouts').observe('click', function(ev){
-			var target = Event.findElement(ev)
-			
-			if(!target.hasClassName('layouts') && !target.hasClassName('active')){
-				var active_layout = $$('#layouts .active').first()
-				
-				if(active_layout)
-					active_layout.removeClassName('active')
-				
-				endless_scroller.changeLayout(target.className)
-				
-				target.addClassName('active')			
-			}			
-		})
-	}
+		window.onscroll = endless_scroller.onScroll.bind(endless_scroller)	
 });
