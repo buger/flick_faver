@@ -155,9 +155,18 @@ Lightbox.prototype = {
                         Builder.node('span',{id:'numberDisplay'})
                     ]),
                     Builder.node('div',{id:'sendTo'}, [
-                        Builder.node('a',{href:'#', id:'to_facebook', target:'_blank'}, 'Facebook'),
-	                    Builder.node('a',{href:'#', id:'to_twitter', target:'_blank'}, 'Twitter'),
-	                    Builder.node('a',{href:'#', id:'to_friendfeed', target:'_blank'}, 'FriendFeed')
+                        Builder.node('a',{href:'#', id:'to_facebook', target:'_blank', title:'Share on facebook'},
+                            Builder.node('img', { src: 'http://facebook.com/favicon.ico' })
+                        ),
+	                    Builder.node('a',{href:'#', id:'to_twitter', target:'_blank', title:'Share on twitter'},
+	                        Builder.node('img', { src: 'http://twitter.com/favicon.ico' })	                                                                                    
+	                    ),
+	                    Builder.node('a',{href:'#', id:'to_friendfeed', target:'_blank', title:'Share on friendfeed'},
+	                        Builder.node('img', { src: 'http://friendfeed.com/favicon.ico' })
+	                    ),
+	                    Builder.node('a',{href:'#', id:'to_visualizeus', target:'_blank', title:'Share on vi.sualize.us'},
+		                    Builder.node('img', { src: 'http://vi.sualize.us/favicon.ico' })
+		                )	                    
 	                ]),                    
                     Builder.node('div',{id:'bottomNav'},
                         Builder.node('a',{id:'bottomNavClose', href: '#' },
@@ -200,6 +209,13 @@ Lightbox.prototype = {
         	
         	window.open('http://facebook.com/share.php?u='+active_image[2]+'&t='+active_image[1]);
         }).bind(this))                
+
+        $('to_visualizeus').observe('click', (function(event){ 
+        	event.stop();
+        	var active_image = this.imageArray[this.activeImage];
+        	
+        	window.open("http://vi.sualize.us/post/?action=add&popup=1&address="+active_image[0]+"&title="+active_image[1]+"&referenceURL="+active_image[2])
+        }).bind(this))                        
         
         var th = this;
         (function(){

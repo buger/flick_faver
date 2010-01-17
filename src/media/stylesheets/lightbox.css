@@ -38,8 +38,9 @@
 #imageData #sendTo {float: left; text-align: left; font-size: 12px; font-family: Arial; color: #000; padding-top: 5px;}
 
 #sendTo a {text-decoration: none; color: #000}
-#sendTo #to_facebook {background: url(http://facebook.com/favicon.ico) left no-repeat; padding-left: 18px;}
-#sendTo #to_twitter {background: url(http://twitter.com/favicon.ico) left no-repeat; padding-left: 18px; margin-left: 5px}
-#sendTo #to_friendfeed {background: url(http://friendfeed.com/favicon.ico) left no-repeat; padding-left: 18px; margin-left: 10px; padding-top: 3px; padding-bottom: 5px;}
+#sendTo #to_facebook {}
+#sendTo #to_twitter {margin-left: 5px}
+#sendTo #to_friendfeed {margin-left: 5px;}
+#sendTo #to_visualizeus {margin-left: 8px;}
 
 #overlay{ position: absolute; top: 0; left: 0; z-index: 90; width: 100%; height: 500px; background-color: #000; }
