@@ -47,7 +47,7 @@
 //
 LightboxOptions = Object.extend({
     fileLoadingImage:        '/images/lightbox/loading.gif',     
-    fileBottomNavCloseImage: '/images/lightbox/closelabel.gif',
+    fileBottomNavCloseImage: '/images/lightbox/close.gif',
 
     overlayOpacity: 0.95,   // controls transparency of shadow overlay
 
@@ -154,6 +154,11 @@ Lightbox.prototype = {
                         Builder.node('span',{id:'caption'}),
                         Builder.node('span',{id:'numberDisplay'})
                     ]),
+                    Builder.node('div',{id:'sendTo'}, [
+                        Builder.node('a',{href:'#', id:'to_facebook', target:'_blank'}, 'Facebook'),
+	                    Builder.node('a',{href:'#', id:'to_twitter', target:'_blank'}, 'Twitter'),
+	                    Builder.node('a',{href:'#', id:'to_friendfeed', target:'_blank'}, 'FriendFeed')
+	                ]),                    
                     Builder.node('div',{id:'bottomNav'},
                         Builder.node('a',{id:'bottomNavClose', href: '#' },
                             Builder.node('img', { src: LightboxOptions.fileBottomNavCloseImage })
@@ -176,6 +181,26 @@ Lightbox.prototype = {
         
         $('favoriteButton').observe('click', (function(event){event.stop(); this.changeFavoriteStatus()}).bind(this))
         
+        $('to_twitter').observe('click', (function(event){ 
+        	event.stop();
+        	var active_image = this.imageArray[this.activeImage];                    	                                   
+        	window.open('http://twitter.com/home?status='+active_image[1]+' - '+active_image[2]);
+        }).bind(this))
+        
+        $('to_friendfeed').observe('click', (function(event){ 
+        	event.stop();
+        	var active_image = this.imageArray[this.activeImage];
+        	
+        	window.open('http://friendfeed.com/?title='+active_image[1]+'&link='+active_image[2]);
+        }).bind(this))
+        
+        $('to_facebook').observe('click', (function(event){ 
+        	event.stop();
+        	var active_image = this.imageArray[this.activeImage];
+        	
+        	window.open('http://facebook.com/share.php?u='+active_image[2]+'&t='+active_image[1]);
+        }).bind(this))                
+        
         var th = this;
         (function(){
             var ids = 
@@ -193,7 +218,7 @@ Lightbox.prototype = {
     	setTimeout(function(){
     		new Effect.Fade('userMessage', { duration: 1, from: 1.0, to: 0.0 })	
     	}, 3000)
-    },
+    },   
     
     updateFavoriteStatus: function(msg){
     	var image_id = this.imageArray[this.activeImage][2].gsub(/.*\//,'')
