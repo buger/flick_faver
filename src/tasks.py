@@ -39,7 +39,7 @@ class UpdateContactsHandler(webapp.RequestHandler):
                 
             objects_to_put = []
             
-            contacts_xml, max_pages = flickr.get_contacts(user.nsid, page)                                 
+            contacts_xml, max_pages = flickr.get_contacts(user.nsid, page, user.token)                                 
             
             logging.info("Contact pages %s, user: %s" % (max_pages, user.nsid))
             logging.info("Contacts len %s" % len(contacts_xml))

@@ -137,7 +137,8 @@ Lightbox.prototype = {
                     Builder.node('img',{id:'lightboxImage'}), 
                     Builder.node('div',{id:'hoverNav'}, [
                         Builder.node('a',{id:'prevLink', href: '#' }),
-                        Builder.node('a',{id:'nextLink', href: '#' })
+                        Builder.node('a',{id:'nextLink', href: '#' }),
+                        Builder.node('a',{id:'resizeBig', title:'Get bigger version', href: '#' })
                     ]),
                     Builder.node('div',{id:'loading'}, 
                         Builder.node('a',{id:'loadingLink', href: '#' }, 
@@ -169,6 +170,7 @@ Lightbox.prototype = {
 		$('loadingLink').observe('click', (function(event) { event.stop(); this.end(); }).bind(this));
 		$('bottomNavClose').observe('click', (function(event) { event.stop(); this.end(); }).bind(this));
 
+		$('resizeBig').observe('click', (function(event) { event.stop(); this.resizeBig() }).bind(this));
         $('imageContainer').observe('click', (function(event) { event.stop(); this.followLink() }).bind(this));
         
         var th = this;
@@ -180,6 +182,75 @@ Lightbox.prototype = {
         }).defer();
     },
 
+    resizeBig: function(){
+    	this.loading.show();
+    	
+    	var active_image = this.imageArray[this.activeImage];
+    	
+    	// Link to big image    
+    	if(active_image[3] == undefined){
+    		var image_id = active_image[2].gsub(/.*\//,'')
+    		
+    		new Ajax.Request('/original_image/'+image_id, {
+    			onSuccess: function(response){    		
+					var original_image = response.responseText;
+    			
+    				if(!original_image.blank()){
+				       var imgPreloader = new Image();
+				        
+				        imgPreloader.onload = (function(){				        					        	
+				        	this.loading.hide();
+				        					            
+				            var width  = imgPreloader.width;
+				            var height = imgPreloader.height;
+				           
+				            console.log(width+"x"+height)
+				            
+				            if(width > 1000){
+				            	height = 1000*height/width
+				            	width  = 1000
+				            }
+				            
+				            if(height > 800){
+				            	width  = 800*width/height
+				            	height = 800
+				            }
+				            
+				            console.log(width+"x"+height)
+				            				            
+				            var arrayPageScroll = document.viewport.getScrollOffsets();
+				            var lightboxTop = arrayPageScroll[1] + (document.viewport.getHeight() / 10);
+				            var lightboxLeft = arrayPageScroll[0];
+				            this.lightbox.setStyle({ top: lightboxTop + 'px', left: lightboxLeft + 'px' }).show();
+
+				            
+				            var oldDuration = this.resizeDuration;
+				            this.resizeDuration = 0;
+				            
+				            this.resizeImageContainer(width, height);
+				            
+				            this.resizeDuration = oldDuration;
+
+				            this.lightboxImage.style.width = width+'px';
+				            this.lightboxImage.style.height = height+'px';
+				            
+				            this.lightboxImage.src = original_image;				            
+				        }).bind(this);
+				        imgPreloader.src = original_image;
+    				}else{
+    					this.loading.hide()
+    				}
+    			}.bind(this),
+    			
+    			onFailure: function(){
+    				this.loading.hide();
+    				
+    				console.log('failure')
+    			}.bind(this)
+    		})
+    	}
+    },
+    
     followLink: function(){
     	var link = this.imageArray[this.activeImage][2]
     	                           
@@ -195,12 +266,14 @@ Lightbox.prototype = {
     updateImageList: function() {   
         this.updateImageList = Prototype.emptyFunction;
 
-        document.observe('click', (function(event){
-            var target = event.findElement('a[rel^=lightbox]') || event.findElement('area[rel^=lightbox]');
-            if (target) {
-                event.stop();
-                this.start(target);
-            }
+        document.observe('click', (function(event){        	
+        	if(Event.isLeftClick(event) && !event.ctrlKey){        	
+	            var target = event.findElement('a[rel^=lightbox]') || event.findElement('area[rel^=lightbox]');
+	            if (target) {
+	                event.stop();
+	                this.start(target);
+	            }
+        	}
         }).bind(this));
     },
     
@@ -208,8 +281,10 @@ Lightbox.prototype = {
     //  start()
     //  Display overlay and lightbox. If image is part of a set, add siblings to imageArray.
     //
-    start: function(imageLink) {    
-
+    start: function(imageLink) {       	
+        this.lightboxImage.style.width = 'auto';
+        this.lightboxImage.style.height = 'auto';
+        
         $$('select', 'object', 'embed').each(function(node){ node.style.visibility = 'hidden' });
 
         // stretch overlay to fill page and fade in
@@ -223,7 +298,9 @@ Lightbox.prototype = {
 
         if ((imageLink.rel == 'lightbox')){        	        	
             // if image is NOT part of a set, add single image to imageArray
-            this.imageArray.push([imageLink.href, imageLink.title, imageLink.previous().href]);         
+        	var image_url = imageLink.down('img').src.gsub(/_m\.jpg/,'.jpg');
+        	
+            this.imageArray.push([image_url, imageLink.title, imageLink.href]);         
         } else {
             // if image is part of a set..
             this.imageArray = 

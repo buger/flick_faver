@@ -1,5 +1,5 @@
 application: flickfaver-v2
-version: development
+version: development-new
 runtime: python
 api_version: 1
 

@@ -1,5 +1,6 @@
 import logging
 import md5
+import urllib
 from xml.dom import minidom
 from django.utils import simplejson as json
 
@@ -29,14 +30,7 @@ class FlickrUserInfo:
         self.fullname = fullname
 
 class FlickrAuthError(StandardError):
-    pass
-
-def token_signature(token, method):
-    string_for_md5 = "%sapi_key%sauth_token%smethod%s" % (FLICKR_SECRET, FLICKR_API_KEY, token, method)
-    
-    logging.warning(string_for_md5)
-    
-    return md5.new(string_for_md5).hexdigest() 
+    pass    
 
 def get_user_info(frob):
     string_for_md5 = "%sapi_key%sfrob%smethodflickr.auth.getToken" % (FLICKR_SECRET, FLICKR_API_KEY, frob)
@@ -47,7 +41,9 @@ def get_user_info(frob):
     logging.info("api_sig: %s" % api_sig)
     logging.info("frob: %s" % frob)
     
-    params = "api_key=%s&api_sig=%s&frob=%s" % (FLICKR_API_KEY, api_sig, frob)
+    params = {'api_key':FLICKR_API_KEY,
+              'api_sig':api_sig,
+              'frob':frob}
     result = call_method("flickr.auth.getToken", params)
     
 
@@ -67,14 +63,33 @@ def get_user_info(frob):
 def fetch_and_parse( url ) :
    result = urlfetch.fetch(url)
    
+   logging.info(result.content)
+   
    if result.status_code == 200:
        return minidom.parseString(result.content)  
 
-def call_method(method, params, auth_token = None):
-    if auth_token:
-        params += "&auth_token=%s&api_sig=%s" % (auth_token, token_signature(auth_token, method))
+def dict_sorted_by_key(dict):
+    return sorted(dict.items(), lambda x,y: cmp(x[0],y[0]))
+
+def dict_to_query_string(dict = {}):    
+    return '&'.join([k+'='+urllib.quote(str(v)) for (k,v) in dict_sorted_by_key(dict)])
+
+def dict_to_string(dict = {}):
+    return ''.join([k+''+urllib.quote(str(v)) for (k,v) in  dict_sorted_by_key(dict)])
+
+def token_signature(token, method, params):    
+    string_for_md5 = "%sapi_key%sauth_token%smethod%s%s" % (FLICKR_SECRET, FLICKR_API_KEY, token, method, dict_to_string(params))
+    
+    logging.warning(string_for_md5)
+    
+    return md5.new(string_for_md5).hexdigest() 
+
+def call_method(method, params, token = None):
+    if token:               
+        params['api_sig'] = token_signature(token, method, params)        
+        params['auth_token'] = token
             
-    url = "http://api.flickr.com/services/rest/?method="+method+"&api_key="+FLICKR_API_KEY+"&"+params
+    url = "http://api.flickr.com/services/rest/?method="+method+"&api_key="+FLICKR_API_KEY+"&"+dict_to_query_string(params)
     logging.info("Calling method. Url: %s" % url)
     
     return fetch_and_parse(url)
@@ -103,10 +118,10 @@ def get_images_from_feed(url):
     return images
 
 def get_image_sizes(photo_id):
-    return call_method("flickr.photos.getInfo","photo_id="+photo_id)
+    return call_method("flickr.photos.getInfo", {'photo_id':photo_id})
 
 def get_user_info_by_url(url):    
-    info = call_method("flickr.urls.lookupUser","url="+url)
+    info = call_method("flickr.urls.lookupUser",{'url':url})
     
     status = info.getElementsByTagName('rsp')[0].getAttribute('stat')
     
@@ -123,17 +138,28 @@ def get_user_info_by_url(url):
 PHOTOS_PER_CONTACT = 20
 
 def get_faves(nsid, per_page = PHOTOS_PER_CONTACT):    
-    photos_xml = call_method("flickr.favorites.getPublicList","user_id=%s&extras=url_m,path_alias,owner_name&per_page=%s" % (nsid, per_page))
+    photos_xml = call_method("flickr.favorites.getPublicList",
+                             {'user_id' :nsid,
+                              'extras'  :'url_m,path_alias,owner_name',
+                              'per_page':per_page})
 
     return photos_xml.getElementsByTagName('photo')
 
 
 CONTACTS_PER_PAGE = 5
 
-def get_contacts(nsid = None, page = 1):
+def get_contacts(nsid = None, page = 1, token = None):
     '''Returns contacts in raw XML'''    
-    response = call_method("flickr.contacts.getPublicList", 
-                           "user_id=%s&per_page=%s&page=%s" % (nsid, CONTACTS_PER_PAGE, page))
+    
+    params = {'page':page, 'per_page':CONTACTS_PER_PAGE}
+    
+    if token is None:
+        method = "flickr.contacts.getPublicList"
+        params['user_id'] = nsid
+    else:
+        method = "flickr.contacts.getList"
+        
+    response = call_method(method, params, token)
     
     contacts_root_xml = response.getElementsByTagName('contacts')[0]
     
@@ -160,6 +186,15 @@ PHOTO_URL_FORMAT = "http://www.flickr.com/photos/%s/%s"
 def photo_uri(user, photo_id):
     return "http://www.flickr.com/photos/%s/%s" % (user, photo_id)
 
+def original_image_url(photo_id):
+    result = call_method('flickr.photos.getSizes', {'photo_id':photo_id})
+    
+    for size in result.getElementsByTagName('size'):        
+        if size.getAttribute('label') == 'Original' or size.getAttribute('label') == 'Large':
+            return size.getAttribute('source')
+    
+    return None
+    
 
 USER_URL_FORMAT = "http://www.flickr.com/photos/%s" 
 

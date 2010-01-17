@@ -142,6 +142,10 @@ def get_photos(page, start_from = None, difficulty = 0, layout = None):
         
     return (photos_groups, start_from_photo, last_date)
         
+        
+class OriginalImageHandler(webapp.RequestHandler):
+    def post(self, photo_id):
+        self.response.out.write(flickr.original_image_url(photo_id))
  
 class MainHandler(webapp.RequestHandler):
     def get(self):
@@ -235,6 +239,7 @@ class AuthCallbackHandler(webapp.RequestHandler):
         user.username = user_info.username
         user.fullname = user.fullname
         user.token = user_info.token
+        #user.token = '72157622500427269-7131c791b2204f16'
         user.last_login = datetime.datetime.now()
         
         try:
@@ -291,11 +296,11 @@ class RSSHandler(webapp.RequestHandler):
                 
             self.response.headers['Content-Type'] = 'application/atom+xml; charset=utf-8'
                     
-            #if subscription.updated_at:
-            #    last_modified = subscription.updated_at.strftime(HTTP_DATE_FMT)            
-            #    self.response.headers['Last-Modified'] = last_modified
+            if subscription.updated_at:
+                last_modified = subscription.updated_at.strftime(HTTP_DATE_FMT)            
+                self.response.headers['Last-Modified'] = last_modified
                 
-            #self.response.headers['ETag'] = '"%s"' % subscription.etag
+            self.response.headers['ETag'] = '"%s"' % subscription.etag
                             
     
             posts = Post.all().ancestor(subscription).order("-updated_at").fetch(5)
@@ -309,6 +314,7 @@ application = webapp.WSGIApplication([
    ('/', MainHandler),
    ('/dashboard', UserHandler),
    ('/photos/([^\/]*)', LoadPhotosHandler),
+   ('/original_image/([^\/]*)', OriginalImageHandler),
    ('/login', LoginHandler),
    ('/logout', LogoutHandler),
    ('/auth_callback', AuthCallbackHandler),
